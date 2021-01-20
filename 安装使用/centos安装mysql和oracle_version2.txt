@@ -1,0 +1,373 @@
+
+1.查看是否安装有mysql
+	rpm -qa查询所有的已安装包
+	rpm -qa|grep mysql查询mysql相关的已安装包
+	
+2.查看yum库是否有mysql相关文件（在从官网下载.rpm格式的yum库包并安装之前，是查不到的）
+	yum list|grep mysql
+
+3.使用rpm把mysql文件安装到yum库
+	官网下载rpm包，然后rpm -ivh 文件名。（需要使用root用户，否则没有相关目录的权限）
+	
+4.使用yum list|grep mysql找到yum库中的mysql文件
+	yum list|grep mysql
+	
+5.使用yum安装
+	yum install 文件名   -- 包括服务器端和客户端
+		yum install mysql-community-server.x86_64
+		
+6.输入 mysql -uroot -p，但是密码错误（安装过程中也没有设置）。
+
+7.输入 service mysqld stop 停止mysql服务。
+	会提示：
+		Authentication is required to manage system services or units.
+		Authenticating as: root
+		Password:
+	此时需要输入linux的root用户的密码。
+	
+8.   cd到mysql安装目录下（/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/bin），执行 ./mysqld_safe --user=mysql --skip-grant-tables --skip-networking &  
+
+9. mysql -u root mysql，报错：Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock' (2)
+
+10. 
+systemctl start mysqld.service      -- 注意不是mysql.service而是mysqld.service。
+systemctl enable mysqld.service
+
+
+
+	
+	
+=============================第二次====================
+1.官网下载mysql-5.7.17-linux-glibc2.5-x86_64.tar文件上传到mysql用户下的mysqlFiles文件夹。
+2.解包：tar -xf mysql-5.7.17-linux-glibc2.5-x86_64.tar
+3.解压&解包：tar -xzf mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz	
+
+
+==============================   第三次   ===========================
+// 看意思像是没有这个服务，貌似已经全部改成mysqld.service了
+service mysql status
+	mysql.service
+   Loaded: not-found (Reason: No such file or directory)
+   Active: inactive (dead)
+   
+// 能看出有这个服务，但是没有启动
+service mysqld status
+   Loaded: loaded (/usr/lib/systemd/system/mysqld.service; enabled; vendor preset: disabled)
+   Active: inactive (dead)
+     Docs: man:mysqld(8)
+           http://dev.mysql.com/doc/refman/en/using-systemd.html
+
+// 启动mysqld服务，成功。注意有“d”。
+service mysqld start
+	Redirecting to /bin/systemctl start  mysqld.service
+	
+/usr/bin/mysqladmin -u root password 'root'
+	error: 'Access denied for user 'root'@'localhost' (using password: NO)'
+
+修改/etc/my.cnf文件，加入 skip-grant-tables；
+
+// 重启mysqld.service
+  systemctl restart  mysqld.service
+  
+mysql -u root -p 然后直接回车，成功进入mysql命令行。
+
+选择数据库，修改密码
+	use mysql
+	UPDATE user SET authentication_string = PASSWORD('root') WHERE user = 'root';
+
+mysql5.7在安装后会给root一个随机密码，从日志中可以查找到：
+	cd /var/log
+	less mysqld.log |grep 'A temporary password is generated for root@localhost'
+	
+	
+============================后续问题===============
+问题：ERROR 1819 (HY000): Your password does not satisfy the current policy requirements
+解决：set global validate_password_policy=0;
+	  SET PASSWORD = PASSWORD('mysql');  -- 默认最短8位
+	  set global validate_password_length=4;  -- 设置为最短4位
+	  select @@validate_password_length;
+	  
+use mysql;
+select host from user;
+update user set host = '%' where host='localhost';
+
+开放3306端口
+centos6及以下版本：/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+centos7：firewall-cmd --zone=public --add-port=1521/tcp --permanent
+	重启生效：systemctl [start|stop|restart] firewalld.service 
+	查看开放的端口firewall-cmd --list-ports
+ 
+
+=============================== 202007 centos6安装mysql8
+1.查看是否安装有mysql
+	rpm -qa查询所有的已安装包
+	rpm -qa|grep mysql查询mysql相关的已安装包
+	
+2.查看yum库是否有mysql相关文件（在从官网下载.rpm格式的yum库包并安装之前，是查不到的）
+	yum list|grep mysql
+
+3.使用rpm把mysql文件安装到yum库
+	官网下载rpm包，然后rpm -ivh 文件名。（需要使用root用户，否则没有相关目录的权限）
+	
+4.使用yum list|grep mysql找到yum库中的mysql文件
+	yum list|grep mysql
+	
+5.使用yum安装
+	yum install 文件名   -- 包括服务器端和客户端
+		yum install mysql-community-server.x86_64
+		
+service mysqld status
+service mysqld start
+cd /var/log
+less /var/log/mysqld.log |grep 'A temporary password is generated for root@localhost'
+得到临时密码：l?Vv0u!Te_)u    。但是比较复杂，还是自己设置吧。
+mysql -u root -p 
+然后输入密码
+SHOW VARIABLES LIKE 'validate_password%';
+select @@validate_password.policy;  
+select @@validate_password.length;  
+set global validate_password.policy=0;
+set global validate_password.length=4;
+alter user user() identified by 'mm4root2020';
+// select host, user, authentication_string, plugin from user;   修改root密码的加密方式（plunge字段），从caching_sha2_password改为mysql_native_password
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';
+flush privileges;
+ALTER USER 'root' IDENTIFIED BY 'mysql' PASSWORD EXPIRE NEVER;
+use mysql;
+select host, user, authentication_string, plugin from user;
+update user set host = '%' where host='localhost';
+grant all privileges on *.* to 'root'@'%' with grant option;
+exit;
+service mysqld restart
+// iptables -A INPUT -p tcp --dport 3306 -j ACCEPT
+// -A是在后面追加，-I是在最开头插入。-I可以生效，-A似乎不能生效。
+iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+/etc/rc.d/init.d/iptables save
+/etc/init.d/iptables restart
+/etc/init.d/iptables status
+reboot
+查看mysql是否启动：service mysqld status
+本机cmd测试能否连接：mysql -h 192.168.246.129 -u root -pmm4root2020
+用python测试是否能联通3306端口
+
+
+=============================== 202007 centos 8 安装mysql 8
+1.查看是否安装有mysql
+	rpm -qa查询所有的已安装包
+	rpm -qa|grep mysql查询mysql相关的已安装包
+	
+2.查看yum库是否有mysql相关文件（在从官网下载.rpm格式的yum库包并安装之前，是查不到的）
+	yum list|grep mysql
+
+3.使用rpm把mysql文件安装到yum库
+	官网下载rpm包，然后rpm -ivh 文件名。（需要使用root用户，否则没有相关目录的权限）
+	依次安装：
+		rpm -ivh mysql-community-common-8.0.21-1.el8.x86_64.rpm
+		rpm -ivh mysql-community-libs-8.0.21-1.el8.x86_64.rpm
+		rpm -ivh mysql-community-client-8.0.21-1.el8.x86_64.rpm
+		yum install perl -y
+		rpm -ivh mysql-community-server-8.0.21-1.el8.x86_64.rpm
+mysqladmin --version
+mysqld --initialize
+cd /var/lib/mysql;    ll;
+chown -R mysql:mysql /var/lib/mysql/
+启动服务：systemctl start mysqld
+/**
+	systemctl stop mysqld //停止服务
+	systemctl restart mysqld //重启服务
+	systemctl status mysqld //查看服务
+**/
+查看随机生成的临时root密码：cat /var/log/mysqld.log | grep password
+mysql -u root -p 
+然后输入密码
+alter user user() identified by 'mysql2020';
+use mysql;
+select host, user, authentication_string, plugin from user;
+update user set host = '%' where host='localhost';
+// 修改root密码的加密方式（plunge字段），从caching_sha2_password改为mysql_native_password  
+// 同时，设置密码策略为永不过期。
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'mysql' PASSWORD EXPIRE NEVER;
+grant all privileges on *.* to 'root'@'%' with grant option;
+flush privileges;
+exit;
+查看端口是否开放：firewall-cmd --query-port=3306/tcp
+开放3306端口：firewall-cmd --zone=public --add-port=3306/tcp --permanent
+重启防火墙：systemctl restart firewalld
+用客户端连接成功。
+
+忘记mysql密码，重置密码（mysql8）
+	停止服务（以管理员身份）：net stop mysql
+	mysqld --console --skip-grant-tables --shared-memory
+	新开一个命令行窗口
+	mysql -u root -p ，不输入密码，回车直接登录
+	设置密码为空字符串：update mysql.user set authentication_string='' where user='root';
+	退出。关掉执行了“mysqld --console --skip-grant-tables --shared-memory”命令的窗口（相当于从这个状态退出数据库）。
+	net start mysql正常启动mysql。mysql -u root -p ，不输入密码，回车直接登录。
+	/** 可以先查一下root是不是localhost：
+			use mysql;
+			select host, user, authentication_string, plugin from user;
+	**/
+	ALTER USER 'root'@'localhost' IDENTIFIED BY 'mysql' PASSWORD EXPIRE NEVER;
+	退出。可以用新密码登录了。
+
+	
+===============================================安装oracle====================================================
+groupadd oinstall;
+groupadd dba;
+groupadd backupdba;
+groupadd osdgdba;
+groupadd kmdba;
+useradd -g oinstall -g dba -m oracle
+usermod -a -G backupdba oracle
+usermod -a -G osdgdba oracle
+usermod -a -G kmdba oracle
+usermod -a -G oinstall oracle
+// 查看oracle所属群组：groups oracle
+
+mkdir -p /data/oracle;
+mkdir -p /data/oraInventory;
+mkdir -p /data/database;
+chown -R oracle:oinstall /data/oracle;
+chown -R oracle:oinstall /data/oraInventory;
+chown -R oracle:oinstall /data/database;
+
+// 据说oracle识别不了centos，所以要改为redhat
+vi /etc/redhat-release
+	删除原来的，修改为“redhat-7”
+
+// 查看依赖包的安装情况，显示的是全部，加上“|grep not”可以仅显示未安装的
+// 参考官网对包的要求：https://docs.oracle.com/cd/E11882_01/install.112/e47689/pre_install.htm#BABCFJFG	
+-- rpm -q binutils compat-libstdc++-33 elfutils-libelf elfutils-libelf-devel gcc gcc-c++ glibc-2.5 glibc-common glibc-devel glibc-headers ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel make sysstat unixODBC unixODBC-devel
+
+-- rpm -q binutils-2.23.52.0.1-12.el7.x86_64 compat-libcap1-1.10-3.el7.x86_64 compat-libstdc++-33-3.2.3-71.el7.i686 compat-libstdc++-33-3.2.3-71.el7.x86_64 gcc-4.8.2-3.el7.x86_64 gcc-c++-4.8.2-3.el7.x86_64 glibc-2.17-36.el7.i686 glibc-2.17-36.el7.x86_64 glibc-devel-2.17-36.el7.i686 glibc-devel-2.17-36.el7.x86_64 ksh libaio-0.3.109-9.el7.i686 libaio-0.3.109-9.el7.x86_64 libaio-devel-0.3.109-9.el7.i686 libaio-devel-0.3.109-9.el7.x86_64 libgcc-4.8.2-3.el7.i686 libgcc-4.8.2-3.el7.x86_64 libstdc++-4.8.2-3.el7.i686 libstdc++-4.8.2-3.el7.x86_64 libstdc++-devel-4.8.2-3.el7.i686 libstdc++-devel-4.8.2-3.el7.x86_64 libXi-1.7.2-1.el7.i686 libXi-1.7.2-1.el7.x86_64 libXtst-1.2.2-1.el7.i686 libXtst-1.2.2-1.el7.x86_64 make-3.82-19.el7.x86_64 sysstat-10.1.5-1.el7.x86_64
+
+/* rpm -q binutils.x86_64 compat-libcap1-1.10-3.el7.x86_64 compat-libstdc++-33-3.2.3-71.el7.i686 compat-libstdc++-33-3.2.3-71.el7.x86_64 gcc-4.8.2-3.el7.x86_64 \
+gcc-c++-4.8.2-3.el7.x86_64 glibc-2.17-36.el7.i686 glibc-2.17-36.el7.x86_64 glibc-devel-2.17-36.el7.i686 glibc-devel-2.17-36.el7.x86_64 ksh libaio-0.3.109-9.el7.i686 libaio-0.3.109-9.el7.x86_64 \
+libaio-devel-0.3.109-9.el7.i686 libaio-devel-0.3.109-9.el7.x86_64 libgcc-4.8.2-3.el7.i686 libgcc-4.8.2-3.el7.x86_64 libstdc++-4.8.2-3.el7.i686 libstdc++-4.8.2-3.el7.x86_64 libstdc++-devel-4.8.2-3.el7.i686 \
+libstdc++-devel-4.8.2-3.el7.x86_64 libXi-1.7.2-1.el7.i686 libXi-1.7.2-1.el7.x86_64 libXtst-1.2.2-1.el7.i686 libXtst-1.2.2-1.el7.x86_64 make-3.82-19.el7.x86_64 sysstat-10.1.5-1.el7.x86_64 /*
+
+rpm -q binutils.x86_64 compat-libcap1.x86_64 compat-libstdc++.i686 compat-libstdc++.x86_64 gcc.x86_64 \
+gcc-c++.x86_64 glibc.i686 glibc.x86_64 glibc-devel.i686 glibc-devel.x86_64 ksh libaio.i686 libaio.x86_64 \
+libaio-devel.i686 libaio-devel.x86_64 libgcc.i686 libgcc.x86_64 libstdc++.i686 libstdc++.x86_64 libstdc++-devel.i686 \
+libstdc++-devel.x86_64 libXi.i686 libXi.x86_64 libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
+
+// 关闭seLinux
+vi /etc/selinux/config
+	SELINUX=disabled   #此处修改为disabled
+
+vi /etc/sysctl.conf
+	net.ipv4.icmp_echo_ignore_broadcasts = 1
+	net.ipv4.conf.all.rp_filter = 1
+	fs.file-max = 6815744 #设置最大打开文件数
+	fs.aio-max-nr = 1048576
+	kernel.shmall = 2097152 #共享内存的总量，8G内存设置：2097152*4k/1024/1024
+	kernel.shmmax = 2147483648 #最大共享内存的段大小
+	kernel.shmmni = 4096 #整个系统共享内存端的最大数
+	kernel.sem = 250 32000 100 128
+	net.ipv4.ip_local_port_range = 9000 65500 #可使用的IPv4端口范围
+	net.core.rmem_default = 262144
+	net.core.rmem_max= 4194304
+	net.core.wmem_default= 262144
+	net.core.wmem_max= 1048576
+
+sysctl -p
+
+vi /etc/security/limits.conf
+	oracle soft nproc 2047
+	oracle hard nproc 16384
+	oracle soft nofile 1024
+	oracle hard nofile 65536
+
+
+vi /home/oracle/.bash_profile
+	export ORACLE_BASE=/data/oracle #oracle数据库安装目录
+	export ORACLE_HOME=$ORACLE_BASE/product/12.1.0/dbhome_1 #oracle数据库路径
+	export ORACLE_SID=orcl #oracle启动数据库实例名
+	#export ORACLE_TERM=xterm #xterm窗口模式安装
+	export PATH=$ORACLE_HOME/bin:/usr/sbin:$PATH #添加系统环境变量
+	export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib #添加系统环境变量
+	export LANG=C #防止安装过程出现乱码
+	export NLS_LANG=AMERICAN_AMERICA.ZHS16GBK  #设置Oracle客户端字符集，必须与Oracle安装时设置的字符集保持一致，
+
+
+source /home/oracle/.bash_profile
+
+vi /etc/oraInst.loc	
+	inventory_loc=/data/oraInventory
+	inst_group=oinstall
+
+chown oracle:oinstall /etc/oraInst.loc
+chmod 664 /etc/oraInst.loc
+
+yum install unzip.x86_64
+
+chown -R oracle:oinstall /usr/src/oracle-linuxamd64_12102_database_se2_1of2.zip
+chown -R oracle:oinstall /usr/src/oracle-linuxamd64_12102_database_se2_2of2.zip
+
+su - oracle
+
+以下是静默安装模式，响应文件（模板是db_install.rsp）需要设置的内容：
+oracle.install.option=INSTALL_DB_SWONLY // 安装类型
+ORACLE_HOSTNAME=db // 主机名称（hostname查询）
+UNIX_GROUP_NAME=oinstall // 安装组
+INVENTORY_LOCATION=/data/oraInventory //INVENTORY目录（不填就是默认值）
+SELECTED_LANGUAGES=en,zh_CN,zh_TW // 选择语言
+ORACLE_HOME=/data/oracle/product/11.2.0/db_1 // oracle_home
+ORACLE_BASE=/data/oracle // oracle_base
+oracle.install.db.InstallEdition=EE // oracle版本
+oracle.install.db.isCustomInstall=false //自定义安装，否，使用默认组件
+oracle.install.db.DBA_GROUP=dba // dba用户组
+oracle.install.db.OPER_GROUP=oinstall // oper用户组
+oracle.install.db.config.starterdb.type=GENERAL_PURPOSE //数据库类型
+oracle.install.db.config.starterdb.globalDBName=orcl //globalDBName
+oracle.install.db.config.starterdb.SID=orcl //SID
+oracle.install.db.config.starterdb.memoryLimit=81920 //自动管理内存的内存(M)
+oracle.install.db.config.starterdb.password.ALL=oracle //设定所有数据库用户使用同一个密码
+SECURITY_UPDATES_VIA_MYORACLESUPPORT=false（手动写了false）
+DECLINE_SECURITY_UPDATES=true //设置安全更新（貌似是有bug，这个一定要选true，否则会无限提醒邮件地址有问题，终止安装。PS：不管地址对不对）
+
+・
+// 根据提示，.rsp文件不能用相对路径，否则会提示找不到文件
+./runInstaller -silent -responseFile /data/database/etc/db_install.rsp
+
+// 安装过程中查看日志（如果有warn或者fatal等大于info级别的会自动出现在命令终端）
+// 会停在“Number of threads for fast copy”很久
+tail -f /data/oraInventory/logs/installActions2017-01-08_10-56-55AM.log
+
+(oracle用户)
+cd
+vi .bashrc
+	export ORACLE_HOME=/data/oracle/product/12.1.0.2.0/db_1
+	export PATH=$PATH:$ORACLE_HOME/bin
+	export ORACLE_SID=orcl
+source .bashrc
+
+// 登录成功，但是登录时显示登录的是一个空白实例
+sqlplus / as sysdba
+	startup，显示缺少文件
+
+cd /data/oracle/product/12.1.0.2.0/db_1/dbs
+
+// 复制那个缺少的文件，并按照文件中的注释修改<ORACLE_BASE>为安装时指定的那个实际路径
+cp init.ora initorcl.ora
+
+
+sqlplus / as sysdba
+	startup，报错：ORA-00845: MEMORY_TARGET not supported on this system。
+	查看initorcl.ora，可以看到MEMORY_TARGET配置为1G。
+	查看系统MEMORY_TARGET：df -h|grep shm。
+	修改其中一个的大小。
+	
+// 注意要以oracle用户身份创建
+mkdir -p admin/orcl/adump
+mkdir fast_recovery_area
+
+sqlplus / as sysdba
+	startup mount;
+
+
+============安装oracle 20171010============
+
+
+
+

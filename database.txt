@@ -1,0 +1,342 @@
+
+
+
+
+一些查询手法
+	同一个商户，多次修改，取最新的一次修改
+		方法1：
+			按名字分组，取max(modify_date)，然后再用主查询关联过来
+			select t.modi_date,t.voucher
+				from wf_mch_info t left JOIN acq_inst ON acq_inst.acq_id = t.acq_id
+				left JOIN acq_inst acq_inst1 ON acq_inst1.acq_id = t.qy_id 
+				left JOIN mcc ON mcc.mcc = t.mcc
+				inner join (select cname,vouch_type,max(modi_date) modi_date from wf_mch_info group by cname,vouch_type) tf on t.cname = tf.cname and t.modi_date = tf.modi_date and t.vouch_type = tf.vouch_type 
+				where t.sp_status = '2'
+				and not exists (select 1 from posp.posp_ext_info_exchange ee where t.voucher = ee.voucher and ee.sys_type = 'M')
+				order by t.modi_date asc
+		方法2：
+			用not exists
+			select t.modi_date,t.voucher
+				from wf_mch_info t left JOIN acq_inst ON acq_inst.acq_id = t.acq_id
+				left JOIN acq_inst acq_inst1 ON acq_inst1.acq_id = t.qy_id 
+				left JOIN mcc ON mcc.mcc = t.mcc
+				where t.sp_status = '2'
+				and not exists (select 1 from posp.posp_ext_info_exchange ee where t.voucher = ee.voucher and ee.sys_type = 'M')
+				and not exists (select 1 from posp.wf_mch_info tt where tt.vouch_type = t.vouch_type and tt.mid = t.mid and tt.modi_date > t.modi_date )
+				order by t.modi_date asc
+				
+	update cust_acc_bank b LEFT JOIN 
+	( select * from ln_app_cust_info ci where ci.CARD_ID='360825199010200828' LIMIT 1 )
+	 a ON b.CARD_ID = a.CARD_ID 
+	 set b.ACC_NO=a.BANK_ACC,b.BANK_CODE=a.BANK_CODE,
+	b.BANK_ACC_MOBILE=a.BANK_ACC_MOBILE,
+	b.platform='FY'
+	where b.CARD_ID='360825199010200828' and b.BANK_NAME='王玉茹';
+	
+	cust_acc_bank里面的platform='FY'的数据复制一条一样的，platform改成'KFT'。
+		insert into cust_acc_bank (select card_id,acc_no,acc_name,bank_code,bank_name,bank_acc_city,bank_acc_mobile,'KFT' from cust_acc_bank where platform='FY');
+		由此可知，不是一边select一边insert（这样没法同一个表同时操作），而是先全部select，然后整体insert。
+		
+	// 同一个表作为条件进行update，没法用in，可以用left join。如下：
+	// 注意必须是inner join两端完全匹配，另外内表和外表的where必须充足，连接的on条件也要严格。（两表相等的放on，和常量相等的放where）。
+	update cust_acc_bank t5 INNER JOIN 
+	(select t3.CARD_ID,t3.ACC_NO,t3.platform from cust_acc_bank t3 where t3.CARD_ID in 
+	(select t1.CARD_ID from 
+	(select count(1) c,t0.CARD_ID from cust_acc_bank t0 
+	where t0.PLATFORM='DEPOSIT'
+	GROUP BY t0.CARD_ID) t1 
+	where t1.c=1)
+	and t3.DEFAULT_CARD='0' and t3.platform='DEPOSIT') t6 on t5.card_id=t6.card_id and t5.ACC_NO=t6.ACC_NO and t5.platform=t6.platform
+	set t5.DEFAULT_CARD='1' 
+	where t5.PLATFORM='DEPOSIT' and t5.DEFAULT_CARD='0';
+	
+	// 查询列注释
+	select t.COLUMN_COMMENT,t.* from INFORMATION_SCHEMA.Columns t where table_schema='jf_cn' and column_comment REGEXP '信用';
+	
+一些遇到的问题
+	insert时如果有个字段重复了，就不insert
+		mysql：这个字段如果有唯一约束，就用insert ignore into
+			
+	
+数据库表设计
+	表之间的关系。多对多要用中间关系表。
+	设计范式。
+
+不使用索引
+		对索引列使用函数。
+		!=。
+			经测试，如果是id主键，是range，范围查询，而非全表扫描。
+			如果是非主键的普通索引，则和返回值有关，如果返回*，是all，
+			如果返回where中的索引列，是index（但是这种情况没啥意义，最多配合返回一个主键id）。
+			/* 
+			EXPLAIN 
+			SELECT * FROM `ln_app` 
+			where APP_STATE != 11;
+
+			EXPLAIN 
+			SELECT * FROM `ln_app` 
+			where APP_STATE = '11';
+			
+			EXPLAIN 
+			SELECT id,wo_build_time,APP_STATE FROM `ln_app` 
+			where APP_STATE not in (11,12);
+			
+			EXPLAIN 
+			SELECT id,APP_STATE FROM `ln_app` 
+			where APP_STATE not in (11,12);
+			
+			EXPLAIN 
+			SELECT * FROM `ln_app` 
+			where APP_STATE not in (11,12);			
+			*/
+		not in。  -- 实际相当于!=，in（相当于“=”） 和not exist会使用索引。
+		索引列使用is null   is not null。
+		使用类型转换（比如数字型主键加单引号变成字符型从而导致不使用索引，而且引擎在处理查询和连接时会逐个比较字符串中每一个字符，而对于数字型而言只需要比较一次就够了）。
+				
+		数据类型转换
+			数字类型不要用单引号，否则会因为类型转换不走索引。
+			date类型可以用like，但是会因为类型转换（转成字符串）不走索引。
+		like有些用法走索引，有些不走。  -- %在后面会走索引，在前面不会走。
+		
+union比union all多了比较操作，效率低一点。
+
+in与exist
+	不存在绝对的哪个效率高。比如exists如果没有别的where就肯定是外表全表扫描，而in如果是索引列外表会走索引。比如下面这个in远好于exists，而
+	in和left join效率几乎一样，in的extra是using index，因为内表使用了索引覆盖扫描（因为id和store_id组成了多列索引）而不需要回表查询，left join
+	的extra是using where，看来是没有利用到索引覆盖扫描。
+		EXPLAIN
+		select p.* from ln_app_process p where p.APP_ID in (select a.id from ln_app a where a.store_id=10217);
+
+		EXPLAIN
+		select p.* from ln_app_process p where EXISTS (select 1 from ln_app a where a.store_id=10217 and a.id=p.app_id);
+		
+		EXPLAIN
+		select p.* from ln_app_process p 
+		LEFT JOIN ln_app a ON p.APP_ID=a.ID 
+		where a.store_id=10217;
+
+
+not in与not exist
+		not in不走索引，not exist走索引，所以后者效率高。
+		-- 这句话太绝对，实际上和返回数据比例、索引列选择性等有关系。not in有时候会走索引，type是range，相当于范围查询。
+		|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+		http://www.cnblogs.com/seasons1987/archive/2013/07/03/3169356.html
+		1、in和exists
+
+		in是把外表和内表作hash连接，而exists是对外表作loop循环，每次loop循环再对内表进行查询，一直以来认为exists比in效率高的说法是不准确的，
+		如果查询的两个表大小相当，那么用in和exists差别不大；如果两个表中一个较小一个较大，则子查询表大的用exists，子查询表小的用in；
+
+		例如：表A(小表)，表B(大表)
+
+		select * from A where cc in (select cc from B)　　-->效率低，用到了A表上cc列的索引；
+
+		select * from A where exists (select cc from B where cc=A.cc)　　-->效率高，用到了B表上cc列的索引。
+		相反的：
+
+		select * from B where cc in(select cc from A)　　-->效率高，用到了B表上cc列的索引
+
+		select * from B where exists(select cc from A where cc=B.cc)　　-->效率低，用到了A表上cc列的索引。
+		||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+		
+		
+=================================================
+	利用索引
+		where、order by尽量使用有索引的列（从业务逻辑层面控制）。
+		不走索引
+			不等条件。 -- 错了，会走
+			null
+			or（一个条件不走就全不走）。  
+			-- 如果一个字段有索引，一个字段没有索引，将导致引擎放弃使用索引而进行全表扫描。
+			-- 可以用union all（比union效率高）等价替换。
+			模糊查询，%出现在开头，不会使用索引，%出现在末尾，会使用索引。-- 对于mysql，模糊查询的列可以用fulltext索引提高效率。
+			在where子句中使用表达式计算操作。
+			数字类型不要用单引号，否则会因为类型转换不走索引
+		in和走不走索引没有必然关系。in和exists、join基本上可以互相替换，具体效率看具体情况。
+		如果有limit，最好要有order by。下面这句如果没有order by id，type就是all，rows是全表。有order by id，type是index，rows是10；
+			EXPLAIN
+			select * from ln_app ORDER BY id 
+			limit 10;
+		
+	改写结构
+	
+
+	
+=======================实例===========================
+
+1. left join 一定要有where，否则会先扫驱动表的全表。
+   慎用标量子查询，第三个就查了3次，第一次查ct，第二次查标量子查询返回的结果，第三次查 bs_template_series。
+
+explain select 
+    ct.*
+    from bs_contract_template ct 
+	LEFT JOIN bs_template_series ts ON ct.ID=ts.CONTRACT_TEMPLATE_ID 
+	where ts.PRODUCT_SERIES_ID = 130;
+
+explain select 
+    ct.*
+    from bs_contract_template ct 
+	LEFT JOIN bs_template_series ts ON ct.ID=ts.CONTRACT_TEMPLATE_ID AND ts.PRODUCT_SERIES_ID = 130;
+
+explain select 
+    ct.*
+    from bs_contract_template ct 
+	LEFT JOIN (select * from bs_template_series ts where ts.PRODUCT_SERIES_ID = 130) ts2 ON ct.ID=ts2.CONTRACT_TEMPLATE_ID;
+
+
+	
+================ 优化总结 ====================
+设计表时优化
+	表列优化
+		表需要存那些列。根据业务，尽量减少跨表查询。
+	
+	数据类型优化
+		数据类型要准确。字符、数字、布尔（tinyint）要分清楚。
+		占用空间要少。
+		尽量非空，并添加not null约束。
+		
+		大方面的类型选择
+			数字比字符串处理速度快。
+		字符串选择
+			定长速度比变长快。
+		数字选择
+			浮点计算可能会有舍入误差。重要字段用定点（decimal）。
+		日期选择
+			相对于datetime，timestamp占用空间少，表示的日期范围小。
+	索引优化/查询优化
+		索引类型。
+			大部分是b-tree。
+		单列还是多列索引。
+		多列索引要根据业务需要建立合适的顺序，尽量用到尽可能多的列。
+			遵循最左匹配。
+			某一列用到范围查询时，后面的列就不再走索引了。
+
+查询优化
+	对于大表，尽量只查询需要的列，不要把所有列都查出来。sc项目的lnappMapper.xml，在查询的时候就用了动态列技术（ScBaseServiceImpl里面实现），避免查询所有的列。
+
+	普通单表查询
+	多表连接查询
+		in，not in，exists，not exists，连接。
+		需要根据每个表的情况（数据量，索引，查询列数据分布），确定各表查询的先后顺序。
+	多层嵌套查询
+	利用函数、关键字进行逻辑改写
+	
+优化的关键词
+	运算符/关键字
+		!=
+		like
+		in/exists/join
+		between and
+		union
+	where条件顺序
+	
+in优化
+	in后面是常量
+		如果返回数据占总数据量比例很大，可能就不走索引了，此时可能全表扫效率更高
+		（比如possible keys字段有可以使用的索引，key字段实际使用的却为空）。
+		-- 比如ln_app状态有30种，数据量有几百万，而查询返回*，not in(11,12)/in (11,12)可能走全表扫描效率更高。
+		
+		索引数据区分度小的情况：下面3种（in，left join，union all），都是all。
+		EXPLAIN
+		SELECT * FROM `ln_app` 
+		where APP_STATE in (11,12);
+		
+		EXPLAIN
+		select * from ln_app a 
+		LEFT JOIN (
+		select 11 as state UNION ALL
+		select 12 as state
+		) t2 on a.APP_STATE = t2.state;
+
+		EXPLAIN
+		select * from (
+		SELECT * FROM `ln_app` 
+		where APP_STATE = 11
+		union all 
+		SELECT * FROM `ln_app` 
+		where APP_STATE = 12
+		) c;
+		
+		索引数据区分度大的情况：下面3种，in是all，left join是all，union all是ref。
+		EXPLAIN
+		select * from ln_app a 
+		LEFT JOIN (
+		select '2017-03-19 19:49:16' as state UNION ALL
+		select '2017-01-20 19:49:16' as state
+		) t2 on a.WO_BUILD_TIME = t2.state;
+
+		EXPLAIN
+		SELECT * FROM `ln_app` 
+		where WO_BUILD_TIME in ('2017-03-19 19:49:16','2017-01-20 19:49:16');
+
+		EXPLAIN
+		SELECT * FROM `ln_app` 
+		where WO_BUILD_TIME = '2017-03-19 19:49:16'
+		union all 
+		SELECT * FROM `ln_app` 
+		where WO_BUILD_TIME = '2017-01-20 19:49:16';
+	in后面是子查询
+		改写成join、exists对比一下。
+		
+		
+实际sql语句优化分析
+	从下面两个例子可以看出，多表连接查询（比如表A、表B），where条件涉及多表，此时优化器会看能用哪个索引且效率高，就优先用这个索引过滤数据。
+	所以多表连接的时候，要考虑先走哪个索引好。有时候先走表B的索引，然后再用连接条件走表A的索引好。
+	有时候相反。这个要根据两个表的数据量，走的索引是不是选择性很高的唯一索引，第一次查询返回的结果集的大小，等等情况，来决定。
+	
+	生产监控到的慢sql
+		EXPLAIN
+		SELECT
+			app1.*,
+			app2.`contract_examine_status` contract_state
+		FROM
+			ln_app app1
+		LEFT JOIN ln_app_process app2 ON app1.id = app2.app_id
+		WHERE
+			app1.app_state NOT IN (11, 12)
+		AND app1.sa_name LIKE '%王%'
+		AND store_id IN (
+			101,
+			102,
+			103
+		)
+		AND app2.contract_examine_status = 'C1'
+		ORDER BY
+			app1.id DESC
+		
+		执行计划：
+			1	SIMPLE	app1	range	PRIMARY,store_id_wo_build_time,app_state_index	store_id_wo_build_time	9		40	Using where; Using filesort
+			1	SIMPLE	app2	ref	FK_Reference_31	FK_Reference_31	9	jf_cn.app1.ID	1	Using where
+		
+		可以看出，ln_app先用store_id索引进行过滤，然后在应用另外两个where条件 sa_name  LIKE '%王%'、app1.app_state NOT IN (11, 12)，
+		一共扫描了40行数据。然后对ln_app_process用外键查找指定的那一行数据。
+		感觉没啥可优化的。
+		
+		
+		EXPLAIN
+		SELECT
+			app1.*,	app2.`contract_examine_status` contract_state
+		FROM
+			ln_app app1
+		LEFT JOIN ln_app_process app2 ON app1.id = app2.app_id
+		WHERE
+			app1.app_state NOT IN (11, 12)
+		AND app1.sa_name LIKE '%王%'
+		AND app1.wo_build_time >= '2017-01-20 19:49:16'
+		AND app1.wo_build_time <= '2017-06-20 19:49:16'
+		AND org_code LIKE '100%'
+		AND app2.contract_examine_status = 'C1'
+		ORDER BY
+			app1.id DESC;
+		
+		执行计划
+			1	SIMPLE	app2	ALL	FK_Reference_31				2935	Using where; Using temporary; Using filesort
+			1	SIMPLE	app1	eq_ref	PRIMARY,app_state_wo_buile_time_index,wo_buile_time_index,WO_BUILD_TIME,app_state_index	PRIMARY	8	jf_cn.app2.APP_ID	1	Using where
+		先对ln_app_process进行了全表扫描，然后对ln_app进行eq_ref索引扫描。
+		优化：ln_app_process的contract_examine_status加一个索引。
+		
+		
+		
+		
+
+
+

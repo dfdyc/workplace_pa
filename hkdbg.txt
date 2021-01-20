@@ -1,0 +1,53 @@
+
+使用nslookup执行区域传送，查看dns服务器的所有主机名-ip地址信息。
+	/* centos7安装nslookup：yum install bind-utils。
+		windows10自带这个。
+	*/
+	nslookup
+		进入命令行，同时回显默认dns的主机名和ip
+		e.g：nsl.example.net
+		
+	此时在命令行输入一个ip地址，会回显一些信息
+		e.g：输入  192.168.150.3
+	执行区域传送。命令行输入：
+		set type=any
+		ls -d Example.net > /tmp/zone_out
+		
+linux的host、dig命令。
+
+linux安装traceroute：yum install traceroute
+windwos10可以直接用，名字是：tracert
+
+arp-scan
+	centos7安装
+		先安装依赖 yum installlibpcap-devel，然后按照下面地址的installation安装。
+		https://github.com/royhills/arp-scan
+
+nmap
+
+第一部分
+	// intitle: 指令返回的是页面title 中包含关键词的页面
+	intitle:Test.Page.for.Apache "It worked!" "this web site!"
+	
+	linux安装tor browser：
+		xz -d tor-browser-linux64-7.0.4_en-US.tar.xz
+		tar -xvf tor-browser-linux64-7.0.4_en-US.ta
+	// ???
+	tor-resolve www.baidu.com
+
+	linux下，host www.baidu.com可查看其ip地址。
+	nmap
+		扫描指定ip主机，端口打开情况及运行的服务：nmap -sT -PN -n -sV -p 21,22,53,80,110,139,143,443 14.215.177.39  
+	
+	socat TCP4-LISTEN:8080,fork SOCKS4a:127.0.0.1:14.215.177.39:80,socksport=9050 & 
+	nc 127.0.0.1 8080 
+	HEAD / HTTP/1.0
+	
+	第一章
+		14.215.177.39
+		
+
+
+
+
+

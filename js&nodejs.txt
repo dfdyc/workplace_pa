@@ -1,0 +1,32 @@
+
+jquery validation
+		
+jquery
+	选择器
+		根据class选择：$(".c")，最常用
+		根据id
+		根据属性：$("[name=n]")
+		根据可见性
+		
+	函数
+
+
+///////////////////////////////////
+
+nodejs
+	安装
+		可以选择.exe和.msi。
+		.msi
+			选这种方式安装。会自动配置环境变量。安装完成后，在cmd的shell窗口，用node --version和npm查看是否安装、配置成功。
+		.exe
+			这种方式不需要安装，必须切换到.exe所在目录才能执行node开头的命令，并且没法npm。
+		
+	安装包
+		注意，这个npm包安装方式类似python的pip，但是pip是安装在统一的一个位置，而npm是和java类似，一个工程对应一个lib目录，
+		所以是需要安装在js文件相同的目录下，执行js时是在当前目录下找引用的包。
+		// 或者可以安装在统一的目录，然后在引用时指明位置？
+		npm install ssh2
+		npm install -g eslint
+
+
+

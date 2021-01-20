@@ -1,0 +1,6 @@
+
+参考：http://freemarker.foofun.cn/dgui_quickstart_template.html#autoid_2
+fk生成drools的.drl规则文件使用了freemarker（FkRuleFileServiceImpl-->makeFile()）。
+
+
+

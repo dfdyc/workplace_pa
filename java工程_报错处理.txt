@@ -1,0 +1,28 @@
+
+
+问题："javax.servlet.http.HttpServlet" was not found on the Java Build Path
+	// 这是在一个新的环境中导入别的环境的项目时出现的，原来的项目是tomcat7，新的eclipse环境是tomcat9，导致不匹配了。
+	解决：项目右键，Properties--Project Facets，最右侧Runtimes，选中相应的apache tomcat 并点击OK。
+
+连接不上数据库
+	Unable to load authentication plugin 'caching_sha2_password'
+	mysql8的密码加密方式变了。具体修改方式见centos8安装mysql的哪个txt。
+
+	Unknown system variable 'tx_read_only'
+	mysql-connector-java 与 mysql 以及 jdk 版本不匹配。换一个高一点或者低一点的版本即可。
+	
+	Malformed database URL
+	mysql8引起的问题，url多加两个参数即可。
+	
+tomcat无法启动
+	Multiple Contexts have a path of 'xxx'
+	eclipse最左侧工程所在的哪个列表，有一个servers，点开找到tomcat下面的server.xml，里面<context>标签有重复，删除重复的即可。
+
+
+
+
+
+
+
+
+

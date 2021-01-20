@@ -1,0 +1,63 @@
+
+
+euraka
+	与zookeeper的区别
+		C A P三个方面，侧重点不同。
+	
+spring boot
+	注意事项/报错
+		@SpringBootApplication注解的主类不能放在default package下（即src/main/java）。并且其默认@ComponentScan只扫描所在目录及子目录下面的bean。
+		如果想要扫描别的目录下面的bean，需要显式配置@ComponentScan的“basePackages”属性。
+	eclipse新建spring boot项目
+		1.使用sts插件
+			注意一定要按照最新版，否则run as会没有spring boot application选项。
+			eclipse market搜sts，安装。
+			// 本质上还是访问http://start.spring.io/创建。需要联网。
+			file--new--project--spring boot。在选择内容的时候，在Developer Tools里面要把那个热部署sping boot devtools选上。
+		2.新建一个普通的项目，pom中添加依赖。
+		3.访问http://start.spring.io/，下载一个新项目，导入eclipse。
+	idea创建spring boot项目
+		file--project，右侧选择spring initialize，填写项目信息，接下来进入Dependencies页面选择所需的依赖，这一步尽量少选点，手动添加比较好。“web”"developer tools"算是通用的。
+	自定义配置文件
+		默认是application.properties。@PropertySource可指定配置文件。
+		
+	各种starter/自定义starter
+		
+spring cloud（各个组件）
+	RestTemplate。getForObject(). getForEntity(). postForObject(). postForEntity(). 
+	@loadbalanced。封装的ribbon（客户端负载均衡）。
+		
+	actuator&spring boot admin
+	
+	eureka
+		简单使用
+		集群/高可用：互相注册。
+		
+	ribbon
+	
+	feign
+	
+	hystrix
+	
+	分布式配置管理
+		超能用disconfig
+		
+	zuul（api网关）
+		zuul。超能项目没有这种路由。像sc fk注册到zookeeper的服务，只能别的系统通过dubbo调用。外网只能通过sa的功能使用到（不是调用）这些服务。
+		有个eip作为网关，用的是apache camel。但eip跟zuul也不完全一样。zuul是提供了一个对外的http服务（url链接），使外部可以用url调用内网的各个微服务系统，
+		或者是调用所有注册到euraka的服务。而eip是一个路由，内部的微服务通过eip调用外部服务，忘了外部的系统能不能通过eip调用内部服务。
+	sleuth&ZipKin
+		超能项目也有一个统一的log id，但是忘了是咋实现的。
+	分布式事务
+		mq用于分布式事务（某台机器的服务失败回滚了，就通知调用方也回滚，调用方监听到消息后就回滚）。
+		超能项目如何保证一次请求涉及的多个服务的事务一致性？是自己控制的。如果被调用的服务失败回滚，就返回一个错误代码，调用方收到后执行回滚（可以直接抛出异常
+			触发配置的spring事务从而实现回滚，也可以手动写代码回滚），
+	分布式缓存
+	分布式任务调度
+		elastic-job
+	分库分表
+		sharding官网（有中文版）：http://shardingsphere.apache.org/ 
+		这本书写的不全，写了“分库分表”“读写分离”，没写“事务一致”。
+
+
+

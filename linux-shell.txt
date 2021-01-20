@@ -1,0 +1,150 @@
+
+权限
+	r w x S/s T/t
+	-- 权限对于目录和文件的含义不一样。
+
+字符串操作
+	获取字符串长度
+		string="abcd"
+		echo ${#string} #输出 4
+		或者：
+		expr length $string #输出 4
+		
+	截取
+		string="runoob is a great site"
+		echo ${string:1:4} # 输出 unoo
+		
+
+	查找子字符串位置
+		string="runoob is a great company"
+		echo `expr index "$string" is`  # 输出 8
+		
+	其它
+		截取
+			string=abc12342341
+			echo ${string:4}      //2342341  从第4位开始截取后面所有字符串
+			echo ${string:3:3}    //123      从第3位开始截取后面3位
+			echo ${string:3:6}    //123423   从第3位开始截取后面6位
+			echo ${string: -4}    //2341  ：右边有空格   截取后4位
+			echo ${string:(-4)}   //2341  同上
+			expr substr $string 3 3   //123  从第3位开始截取后面3位
+			
+			echo ${string#a*3}     //42341  从$string左边开始，去掉最短匹配子串
+			echo ${string#c*3}     //abc12342341  这样什么也没有匹配到
+			echo ${string#*c1*3}   //42341  从$string左边开始，去掉最短匹配子串
+			echo ${string##a*3}    //41     从$string左边开始，去掉最长匹配子串
+			echo ${string%3*1}     //abc12342  从$string右边开始，去掉最短匹配子串
+			echo ${string%%3*1}    //abc12     从$string右边开始，去掉最长匹配子串
+			
+			echo ${string/23/bb}   //abc1bb42341  替换一次
+			echo ${string//23/bb}  //abc1bb4bb41  双斜杠替换所有匹配
+			echo ${string/#abc/bb} //bb12342341   #以什么开头来匹配，根php中的^有点像
+			echo ${string/%41/bb}  //abc123423bb  %以什么结尾来匹配，根php中的$有点像
+			
+数组
+	获取数组长度
+		my_array[0]=A
+		my_array[1]=B
+		my_array[2]=C
+		my_array[3]=D
+
+		echo "数组元素个数为: ${#my_array[*]}"
+		echo "数组元素个数为: ${#my_array[@]}"
+
+各种符号
+	[]
+	[[]]
+	$[]
+	${}
+	(())
+	
+	$#
+	$@
+	$*
+	$?
+	$$
+	
+
+sed
+	作用
+		处理从stdin接收的数据（1.命令的输出。2.文本文件），不同于普通编辑器，不会修改原文件内容，只是处理读取后的输出内容。每次处理一行。
+		替换字符串：s
+		删除行：d
+		增加行：a、i
+		替换行：c
+		
+	多条命令有两种形式
+		1.连续 -e + 命令，例：nl /etc/passwd | sed -e '3,$d' -e 's/bash/blueshell/'
+		2.像gawk那样用{;}进行分隔，例：nl /etc/passwd | sed -n '/root/{s/bash/blueshell/;p}'
+		
+	过滤（匹配/寻址）
+		行号匹配，$代表最后一行。
+		正则表达式匹配。
+		
+	模式匹配和s替换命令都能用正则表达式
+	
+	模式空间
+	
+	保持空间
+	
+	sed -i可以直接修改文件，对于特别大的文本文件，用sed -i比普通文本编辑器占用的资源少、速度快。
+
+gawk
+	作用
+		处理从stdin接收的数据（1.命令的输出。2.文本文件），不同于普通编辑器，不会修改原文件内容，只是处理读取后的输出内容。
+	用法
+		gawk options program file
+	选项
+		-F：字段分隔符，也可以在program中通过内置变量NF修改。
+	程序
+		程序被当做一个单独的字符串，所以需要用单引号括起来。单引号内可以用大括号分隔成任意不同的块儿。大括号作用域可以配合BEGIN、END使用。
+		内置变量
+			NF
+			$0
+			$1等等
+		自定义变量
+		数组
+			下标可以是数字也可以是字符。
+		条件判断/流程控制
+			雷同c语言。
+		模式匹配
+			一般情况是一行行处理，可以用正则表达式进行匹配，然后只处理匹配上的行。
+
+
+note
+	一行命令想换行，需要先\然后换行。
+		
+命令
+	arp -a
+	declare
+	whereis/which/locate/find
+	history
+	last
+	nbtstat
+	netstat -an
+	nl
+	ping -a   -- 会显示主机名
+	rpm -qa
+	scp
+	su
+	sudo
+	tar
+	tr
+	wget
+	yum search
+	yum install
+	
+	
+	
+	
+	
+	
+	
+	
+			
+			
+			
+
+	
+
+

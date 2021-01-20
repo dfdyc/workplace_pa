@@ -1,0 +1,248 @@
+
+正则表达式转义，用双反斜杠： \\
+
+写存储过程时，如果不小心写了无限循环，navicat一直显示处理中，重启mysql即可解决
+	-- 其实点navicat的红色方块图标的“停止”按钮就行。
+	win+r，输入services.msc打开服务面板，看启动的mysql的服务名字，公司电脑不是叫mysql而是叫mysql56.
+	C:\Windows\System32，下面，以管理员身份运行cmd，net stop mysql56停止，net start mysql56启动。// 最后一个参数是服务名。
+
+锁
+	表锁。
+		在服务层和存储引擎层都有实现。是读写锁。
+	行锁。
+		各个存储引擎自己实现。
+事务
+	隔离级别
+
+存储引擎
+	不同的存储引擎就是不同的处理数据的策略（的实现）
+	
+	innoDb
+	myISAM
+
+函数
+	字符串函数
+		CHAR_LENGTH(s)	
+			返回字符串s的字符数，SELECT CHAR_LENGTH('你好123') -- 5
+		LENGTH(s)	
+			返回字符串s的长度（字节数？），SELECT LENGTH('你好123') -- 9
+		replace()：基于值的替换。
+		insert()：基于位置的替换、删除、增加。
+		substr()/locate()：查找子串从某个位置开始，第1次出现的位置。
+		substring()/left()/right()：截取。
+		lower()/upper()：大小写转换。
+		trim()/ltrim()/rtrim()：去空格。
+		lpad()/rpad()：填充。
+		LOAD_FILE(file_name)	
+			读入文件并且作为一个字符串返回文件内容。文件必须在服务器上，你必须指定到文件的完整路径名，而且你必须有file权限。文件必须所有内容都是可读的并且小于max_allowed_packet。 
+			如果文件不存在或由于上面原因之一不能被读出，函数返回NULL。
+	
+	条件函数
+		-- 都能用case when实现，只是更简洁。
+		if(Condition,A,B)：类似三元表达式。
+		ifnull(expr1,expr2)：如果 expr1 不是 NULL，IFNULL() 返回 expr1，否则它返回 expr2。
+		
+	分组统计
+		group_concat()
+	
+数据类型
+	数字
+		整数
+		小数
+			浮点数
+				单精度
+				双精度
+			定点数
+	字符串
+		定长
+		变长
+		大文本
+	时间
+		日期
+		时间
+		日期时间(datetime)与时间戳(timestamp)
+			datetime保存的是一个文本时间，不管当前使用的是哪个时区，值不变。可表示的时间范围很大。
+			timestamp是距离1970那个时间点经过的秒数，在不同的时区展示的值不一样。可表示的时间范围小（不会早于那个时间点）。
+			timestamp比datetime的空间效率高（占用的空间少？）。
+
+索引
+	索引类型
+		b-tree
+		hash
+		全文索引（myisam引擎才有）
+			适用于两边%%的模糊查询。select时要用对应的语法（match...against）
+		前缀索引
+			对于很长的字符串，只对前几位建立索引。因为对整个建立索引的话性能开销太大。
+		oracle有mysql没有的索引类型
+			位图索引。
+			函数索引。
+		
+	索引用法
+		聚簇索引
+		单列/多列索引
+		最左前缀匹配
+		覆盖索引
+
+优化
+	数据类型优化
+		整型比字符操作代价低。
+		尽量避免null。可以用0等特殊值代替null。
+		decimal适用于对小数进行精确计算，但是性能代价比较高。在数据量很大时，折中的办法是将原数值乘以10000***变成整数用BigInt存储。
+	表设计
+		遵循那几个范式，避免多余的列，避免多余的表连接。
+	索引优化
+		对于数据量很小的表，不用索引不比用索引慢多少（甚至更快），还有增删数据时维护索引的开销。此时加索引远不如不加索引。
+	查询优化
+		mysql有慢查询日志文件。有几个variables是参数，包括超过多长时间算慢查询。
+		show PROFILE;
+			展示了从开始到结束每一步操作的执行时间。
+		
+	执行计划
+		type（从低到高）
+			all，全表扫描。
+			index，索引全扫描。
+			range，只检索给定范围的行,使用一个索引来选择行。key 列显示使用了哪个索引。
+				当使用=、 <>、>、>=、<、<=、IS NULL、<=>、BETWEEN 或者IN 操作符,用常量比较关键字列时,就是range。
+			ref，
+		
+		extra
+			using where
+				与using index相反，索引找到某行后需要再回表取出需要返回的数据。
+			using index
+				仅使用索引就能找到所有所需数据，不需要回表查询，即索引覆盖扫描。
+				场景
+					1.返回列和where字段组成了多列索引。
+					2.返回的是count(*)。
+			Using temporary
+				用到了临时表，比如多表连接时，order by排序的字段不在当前查询的表中。
+			
+			Using filesort
+				说明进行了一次排序（有order by）。
+			
+常用关键字/语法
+	delete和update都能像select那样连接多表。对于update的多表，可以实现oracle的merge那样的效果（用另一个表/视图的值update某个表）。
+	insert ON DUPLICATE KEY UPDATE
+		例：INSERT INTO `table` (`a`, `b`, `c`) VALUES (1, 2, 3) ON DUPLICATE KEY UPDATE `c`=`c`+1;
+		对于任何unique列，如果insert的出现重复，就执行update后面的赋值语句（可以有多个）。
+	insert ignore into
+		如果主键重复，就不执行insert。
+	replace into
+		有坑，碰到unique的列有重复的，replace会删除原来的记录而不是更新（是完全替换，不是update），所以对于自增的主键，会变成一个新的自增值。这点不如用ON DUPLICATE KEY UPDATE。
+	regexp
+	timestamp列在建表的时候用 ON UPDATE CURRENT_TIMESTAMP。就会在每次update的时候，自动更新这个值为当前时间戳。
+	
+查数据字典
+	SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name="user_info" and TABLE_SCHEMA='jf_cn_2016';
+	
+
+存储程序（过程/函数/事件）
+
+	CONTAINS SQL | NO SQL | READS SQL DATA | MODIFIES SQL DATA
+
+	变量
+		局部变量：declare直接声明的。
+		-- 用户变量和全局变量用set设置，不是用declare。-- 不对，declare是声明，set是赋值。
+		用户变量：@开头，作用域是当前用户使用的客户端，在存储过程外也有效。
+		全局变量：global或者@@开头，对所有用户的客户端都有效，只有super权限才能设置。
+	
+	参数
+
+	declare可以定义3种
+		1.普通局部变量
+		2.游标变量
+		3.条件状态及对应处理动作（condition & handler）
+			DECLARE handler_action HANDLER
+				FOR condition_value [, condition_value] ...
+				statement
+
+			handler_action:
+				CONTINUE
+			  | EXIT
+			  | UNDO
+
+			condition_value:
+				mysql_error_code
+			  | SQLSTATE [VALUE] sqlstate_value
+			  | condition_name
+			  | SQLWARNING
+			  | NOT FOUND
+			  | SQLEXCEPTION
+			  
+			 statement：
+				sql语句（只能有一句？？？）
+		
+	set
+		用来给变量赋值，其中值可以是select语句返回的结果。
+	
+	可以控制事务
+		开始：START TRANSACTION
+		提交：COMMIT
+		
+	游标
+		定义：
+			保存一个多行结果集（可以是多列，只需在into后面用逗号分割的多个变量接收即可），用循环+fetch操作每一行。
+		关键点：
+			循环时如何判断已经结束：
+				循环结束后会有一个not found状态，使用declare的声明状态handler语法，在出现not found时set一个标记变量。循环时通过判断这个标记变量来退出循环，
+				DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+		基本语法结构
+			声明：
+			打开：
+			fetch：	
+				语法结构
+					FETCH 
+					  [ [ NEXT | PRIOR | FIRST | LAST 
+								| ABSOLUTE { n | @nvar } 
+								| RELATIVE { n | @nvar } 
+						   ] 
+						   FROM 
+					  ] 
+					{ { [ GLOBAL ] cursor_name } | @cursor_variable_name } 
+					[ INTO @variable_name [ ,...n ] ] 
+			关闭：
+	存储过程使用预处理语句（产品系列脚本有）
+		prepare、execute、deallocate
+		例
+			PREPARE pr1 FROM 'SELECT ?+?';
+			SET @a=1, @b=10 ;
+			EXECUTE pr1 USING @a, @b;
+			-- 不能用EXECUTE pr1 USING 1, 2; 会报错，只能使用用户变量传递。
+			DEALLOCATE PREPARE pr1;
+	
+	流程控制语句
+		条件判断
+			if
+			case
+				
+		循环
+			while...do...end while
+			repeat...until...end repeat
+			label_name:loop...if leave label_name...end loop
+			
+触发器
+	触发时机
+		before、after
+	
+	触发事件
+		INSERT、UPDATE、DELETE
+	
+	多个触发器执行顺序
+	
+	程序体	
+	
+	new./old.
+		用来取操作前后的值，old.只读，new.可以修改且不会再次触发触发器。
+		
+	mysql只有行级触发器
+		FOR EACH ROW
+		
+表分区
+	分区类型
+		range
+		list
+		hash
+集群
+
+
+
+

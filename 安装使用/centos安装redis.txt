@@ -1,0 +1,26 @@
+
+下载.tar.gz文件
+
+复制到redisDir目录下
+
+tar xvzf  redisXXX.tar.gz文件
+
+cd 到解压后的目录
+
+make
+
+make install
+
+// 以后台运行的方式启动redis
+redis-server &
+
+// 测试是否启动成功，返回PONG表示启动成功
+redis-cli ping
+
+// 链接redis，进入命令行操作模式
+redis-cli
+
+// 退出
+quit
+
+

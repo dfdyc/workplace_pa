@@ -1,0 +1,147 @@
+
+配置文件
+	hibernate配置文件
+		hibernate.cfg.xml
+			pojo-entity映射配置
+				<mapping package="com.jj.system.pojo.web" />
+				<mapping resource="com/jj/system/pojo/web/SmMenuitem.hbm.xml" />
+				
+				另一种方式：与spring集成时，配置packagesToScan属性，值应该是有注解待扫描的包。
+				
+			二级缓存
+				配置使用缓存
+					使用ehcache
+						创建EHCache的配置文件ehcache.xml。
+						hibernate.cfg.xml配置ehcache
+							<property name="hibernate.cache.use_second_level_cache">true</property>  
+							<!-- 设置二级缓存插件EHCache的Provider类 -->  
+							<property name="hibernate.cache.region.factory_class">  
+							org.hibernate.cache.ehcache.EhCacheRegionFactory</property>
+					使用redis
+				
+				配置需要缓存的实体/表
+					有几种不同的配置方式
+						1.hibernate.cfg.xml中统一配置。
+							class-cache
+								普通的类缓存。如果有属性是集合，不缓存这个属性值。
+							collection-cache
+								集合缓存。
+						2.在实体类的映射文件（如User.hbm.xml）里面配置/在注解配置时使用@Cache注解进行配置。
+	与spring集成的配置文件
+
+pojo配置
+	按级别分为
+		类的注解
+			
+		属性的注解
+			主键
+				oracle需要使用sequence进行主键自增长配置。
+			普通属性
+				和表字段对应的属性
+					
+				不是和表字段对应的属性
+					对于xml配置，不配置即可；对于注解配置，需要用@Transient。
+			关联属性
+				通过中间表进行多对多配置
+					产品系列和合同模板是多对多的关系。
+						BsProdectSeries.java
+							/**
+							 * 维护与合同模板的多对多关系
+							 * */
+							@OneToMany(fetch = FetchType.LAZY, mappedBy = "prodectSeries")
+							@JsonManagedReference
+							public Set<BsTemplateSeries> getTemplateSeries() {
+								return templateSeries;
+							}
+						
+						BsTemplateSeries.java
+						-- 奇怪，productSeriesId被注释掉了，省了一个@Transient配置。
+							@ManyToOne(fetch = FetchType.EAGER)
+							@JoinColumn(name = "PRODUCT_SERIES_ID")
+							@MdFieldValue(desp = "产品系列")
+							@JsonBackReference
+							public BsProdectSeries getProdectSeries() {
+								return prodectSeries;
+							}
+						
+				不用中间表进行一对多配置
+					产品系列和产品是一对多关系，产品表有产品系列id，产品系列表没有产品信息。
+						BsProdectSeries.java
+							@OneToMany(fetch = FetchType.LAZY, mappedBy = "prodectSeries")
+							@JsonManagedReference
+							public Set<BsProduct> getProduct() {
+								return product;
+							}
+							
+						BsProduct.java
+							@ManyToOne
+							@JoinColumn(name = "PRODUCT_SERIES_ID")
+							@MdFieldValue(desp = "产品系列")
+							@JsonBackReference
+							public BsProdectSeries getProdectSeries() {
+								return prodectSeries;
+							}
+
+							public void setProdectSeries(BsProdectSeries prodectSeries) {
+								this.prodectSeries = prodectSeries;
+							}
+
+							@Transient
+							public Long getProductSeriesId() {
+								return productSeriesId;
+							}
+
+
+查询
+	sessionFactory.getCurrentSession().createSQLQuery()
+		BsStoreHibernateDAO
+	sessionFactory.getCurrentSession().createQuery()
+		BsStoreSaHibernateDAO
+			Query query = getSession().createQuery("from BsStoreSa where userId=? and isDel=?");
+			query.setParameter(0, userId);
+			query.setParameter(1, false);
+			return query.list();
+			-- ?是占位符
+	BaseHibernateDAO
+		save()
+		load()
+		saveOrUpdate()
+		merge()
+		delete()
+	实现增删改查、连接、多层嵌套等查询
+		查
+			get(Class clazz, Serializable id)
+			get(String entityName, Serializable id)
+			
+			load(Class clazz, Serializable id)
+			load(String entityName, Serializable id)
+			load(Object object, Serializable id)  // 这个object是个空对象，load之后的数据会设置到这个对象里面。
+			
+			get/load区别
+				get方法会在调用之后立即向数据库发出sql语句（不考虑缓存的情况下），返回持久化对象；
+				而load方法会在调用后返回一个代理对象，该代理对象只保存了实体对象的id，直到使用对象的非主键属性时才会发出sql语句
+				查询数据库中不存在的数据时，get方法返回null，load方法抛出异常：org.hibernate.ObjectNotFoundException。
+				
+			Query query = getSession().createQuery("from BsStoreSa where userId=? and isDel=?");
+			query.setParameter(0, userId);
+			query.setParameter(1, false);
+			return query.list();
+			
+		增
+			save(Object object)
+			persist(Object object)
+			saveOrUpdate(Object object) 
+		
+		删
+			delete(Object object)
+			
+		改
+			update((Object object)
+		
+		连接
+		
+		多层嵌套
+
+
+
+

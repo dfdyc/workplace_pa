@@ -1,0 +1,43 @@
+kieServices
+	静态方法创建：KieServices.Factory.get()。
+	用来配合KieFileSystem创建kieBuilder：kieServices.newKieBuilder(kfs).buildAll();
+	
+KieFileSystem
+	创建：kieServices.newKieFileSystem()
+	作用：读drl文件：kfs.write(ResourceFactory.newFileResource(resource.getPath()));
+	
+kieBuilder
+	创建：见上
+	作用：没啥用，仅用来验证构建是否成功kieBuilder.getResults().hasMessages(Level.ERROR)
+kieContainer
+	创建: kieServices.newKieContainer(kieServices.getRepository().getDefaultReleaseId());
+	
+kieSession
+	创建:
+		// droolsProperties是java的Properties的实例。
+		KieSessionConfiguration conf;
+		if (droolsProperties == null) {
+			conf = SessionConfiguration.getDefaultInstance();
+		} else {
+			conf = SessionConfiguration.newInstance(droolsProperties);
+		}
+		kieSession = kieContainer.newKieSession(conf);
+	作用：
+		TrackingAgendaEventListener agendaEventListener = new TrackingAgendaEventListener();
+		TrackingWorkingMemoryEventListener workingMemoryEventListener = new TrackingWorkingMemoryEventListener();
+		kieSession.addEventListener(agendaEventListener);
+		kieSession.addEventListener(workingMemoryEventListener);
+		
+		FactHandle fact = kieSession.insert(lnAppVo);
+		int fired = kieSession.fireAllRules();
+		kieSession.delete(fact);
+		
+		kieSession.dispose();
+		kieSession.destroy();
+		
+FactHandle
+	创建：见上。
+	作用：作为执行规则时候的一个标识，执行完之后可以用这个释放。
+	
+	
+	

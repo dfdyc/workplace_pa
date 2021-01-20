@@ -1,0 +1,228 @@
+
+mybatis-generator:generate
+
+sc项目的lnappMapper.xml，在查询的时候，用了动态列技术，避免查询所有的列。
+
+配置
+		pojo不需要任何配置；
+		一个接口对应一个xml文件，对应一个pojo的增删改查；
+		controller将service注入，service中注入mapper接口，并使用该接口对应的xml中配置的方法；
+		
+		单独使用，需要java中加载mybatis.xml，获取sqlSessionFactory、sqlSession，
+		配spring，在spring.xml中配置sqlSessionFactory、sqlSession，由spring管理（创建、注入）；
+
+对应关系
+		实体xml与其它的对应关系
+			mapper对应接口；
+			resultMap对应pojo，子元素对应pojo属性；
+			
+			select
+			insert
+			delete
+			update
+			
+			sql
+				
+		spring使用MapperScannerConfigurer扫描接口及其对应的xml（放在同一个文件夹下，名字一致）；
+		mybatis.xml配有实体.xml；
+		sqlSessionFactory加载mybatis.xml；
+		调用sqlSession获取mapper，mapper使用自己定义的方法；
+		
+--------------------0128
+环境配置文件
+		application.xml
+			4个mybatis配置类
+			org.mybatis.spring.SqlSessionFactoryBean
+					SqlSessionFactory，配属性dataSource、configLocation（mybatis的xml文件）；
+			org.mybatis.spring.SqlSessionTemplate
+					SqlSession，配constructor-arg（SqlSessionFactory）；
+			org.mybatis.spring.mapper.MapperScannerConfigurer
+					配置属性basePackage，然后包内所有的类都可以被@Autowired、被ref；
+			org.mybatis.spring.mapper.MapperFactoryBean
+					对应一个需要mapper的pojo；
+		configuration.xml
+			有2种被加载方式
+				1.spring的application.xml-->SqlSessionFactoryBean中配置属性；
+				2.不用spring，
+					Reader reader = Resources.getResourceAsReader("configuration.xml");
+					SqlSessionFactory sf = new SqlSessionFactoryBuilder().build(reader);
+					SqlSession session = sf.openSession();
+		generatorConfig.xml
+			应该是自动生成mapper的配置文件；
+
+mapper接口
+		和普通接口一样，但不是由.java实现，而是用.xml实现；
+mapper的xml配置
+		用于实现mapper接口，<mapper>的namespace属性指定需要继承的接口；
+		在application.xml的MapperScannerConfigurer的basePackage中被扫描，然后@Autowired被注入，相当于普通的注入/new；
+		id对应mapper的方法；
+		<trim>的suffix指的是最后的后缀，suffixOverrides是指如果不是最后一个，用这个替代；
+		#{}就是方法的参数；
+service
+
+缓存
+		一级缓存：存储作用域为 Session，貌似是自动的，没法配置、干涉。
+		二级缓存：默认PerpetualCache，可使用其它的（超能项目用的是redis）。
+						
+		mybatis的缓存控制有3个级别，1是配置文件中<setting name="cacheEnabled" value="true"/>开启缓存，2是 mapper.xml 文件中用<cache>标签指定整个对象表的缓存，
+		3是在某个具体的<select>中使用useCache、flushCache属性指定该语句如何使用缓存。	
+		
+		项目中，在xml中搜索cache，是MybatisRedisCache.java。
+缓存容易出现的问题
+	1.GoodsDictMapper.xml用<cache>标签配置了二级缓存。而其中的listByProductSeriesId用join关联了goods_dict_product_series gdps，
+	如果gdps内容修改了，GoodsDictMapper.xml这边感知不到，会仍然使用缓存查询。
+	2.GoodsDictMapper.xml的listBrandModel是主页面分页查询。如果查询参数不同，不会hit cache（因为sql的where不同？），如果查询参数相同，
+	但是页数不同，会hit cache造成错误（因为仅limit不同不会识别为不同的sql？因为limit是由分页插件在实际查询的时候才加上的？）。
+		
+延迟加载问题
+	一对一、一对多分别使用<association><collection>。
+	首先要在mybatis全局配置文件用<setting name="lazyLoadingEnabled" value="true"/>开启延迟加载，
+	可酌情配置<setting name="aggressiveLazyLoading" value="true"/>。
+	然后在<association><collection>中使用select属性指定加载时去哪个表查询。
+	如果不使用select属性，就需要在查找一级对象属性时使用join连接查询查二级属性对象，然后会把查询结果自动映射到属性，
+	此时没有使用延迟加载。
+		
+<association>
+	/** 这个标签不是必须使用的。比如下面这个cnweb_ss的场景，这个groupID完全可以当成普通的属性，无非是在查询的时候不会再同时关联查询出Group对象了，需要在java代码中取出这个
+		groupId进一步查询Group对象。
+	**/
+	cnweb_ss & monitor 有用到这个标签
+		cnweb_ss中，SAUserinfo对象有个groupId属性与Group对象关联，这个属性就用了association标签，其中select属性指定了一个查询语句查询出一个group对象。
+
+$ 和 #
+	$会使用字面值，不做任何加工修改。
+	$不会生成预处理语句。
+	#是首选，会自动进行类型转换（包括添加单引号），能防sql注入。
+		曾经出现过对字符串（银行卡字段）使用了$，然后虽然能查询，但是对于近似值也给查出来了。
+	#生成的是预处理语句。
+		实际上是<select>标签的statementType属性默认值是“PREPARED”
+
+使用foreach
+	根据官方文档描述，collection是固定的几个值（list, array, map）：-- 不是！！！可以是任意属性名：
+		注意 你可以传递一个 List 实例或者数组作为参数对象传给 MyBatis。当你这么做的时候,
+		MyBatis 会自动将它包装在一个 Map 中,用名称在作为键。List 实例将会以“list” 作为键,而数组实例将会以“array”作为键。
+
+使用trim（不只是用于trim where，也可以配合foreach进行trim）
+	要会灵活运用。几种用法：
+		sc项目的lnappMapper.xml
+			1.最常见的，用于where。
+				<trim prefix="WHERE" prefixOverrides="AND|OR">
+				</trim>
+			2.在某个小括号中，用于删除多余的前缀。
+				AND 
+				(	
+				<trim prefix="" prefixOverrides="OR">
+					<if test="orgCodeRegs != null and orgCodeRegs.size > 0 ">
+					OR app.ORG_CODE_REG in
+						<foreach item="item" index="index" collection="orgCodeRegs"
+							open="(" separator="," close=")">
+							#{item}
+						</foreach>
+					</if>
+					<if test="orgCodeProvs != null and orgCodeProvs.size > 0 ">
+						OR	app.ORG_CODE_PROV in
+						<foreach item="item" index="index" collection="orgCodeProvs"
+							open="(" separator="," close=")">
+							#{item}
+						</foreach>
+					</if>
+				</trim>
+				)
+			3.用于insert。
+				insert into ln_app
+					<trim prefix="(" suffix=")" suffixOverrides=",">
+					</trim>
+					<trim prefix="values (" suffix=")" suffixOverrides=",">
+					</trim>
+			4.用于update。
+				
+
+自动生成文件
+
+传递不同类型的参数
+	1.对象
+		可以用"#{属性名}"、"${属性名}"引用值。
+	
+	2.普通类型（string、int等）
+		可以用”#{从0开始的位置索引}“、“#{参数名}”、“${参数名}”引用值，不能用”${位置索引}“，因为$会取字面值，即把索引数值传递给sql。
+	
+	3.集合类型（Map、List）
+		Map
+			可以使用foreach标签，也可以像对象那样用"#{key}"、"${key}"引用值。
+		List
+			可以使用foreach标签循环取值。
+			
+mybatis传递参数的方式
+	1. 使用名字传递单个参数
+	public List<XXBean> getXXBeanList(String id);  
+
+	<select id="getXXXBeanList" parameterType="java.lang.String" resultType="XXBean">
+
+	　　select t.* from tableName t where t.id= #{id}  
+
+	</select>
+	2.使用位置序号传递多个参数
+	public List<XXXBean> getXXXBeanList(String xxId, String xxCode);  
+
+	<select id="getXXXBeanList" resultType="XXBean">
+
+	　　select t.* from tableName where id = #{0} and name = #{1}  
+
+	</select>  
+	3.使用map传递多参数
+	public List<XXXBean> getXXXBeanList(HashMap map);  
+
+	<select id="getXXXBeanList" parameterType="hashmap" resultType="XXBean">
+
+	　　select 字段... from XXX where id=#{xxId} code = #{xxCode}  
+
+	</select>
+	4.使用list传递多参数
+	public List<XXXBean> getXXXBeanList(List<String> list);  
+
+	<select id="getXXXBeanList" resultType="XXBean">
+	　　select 字段... from XXX where id in
+	　　<foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+	　　　　#{item}  
+	　　</foreach>  
+	</select>
+	5.使用注解传递多参数
+	public AddrInfo getAddrInfo(@Param("corpId")int corpId, @Param("addrId")int addrId);
+ 
+	<select id="getAddrInfo"  resultMap="com.xxx.xxx.AddrInfo">
+		   SELECT * FROM addr_info 
+	　　　　where addr_id=#{addrId} and corp_id=#{corpId}
+	</select>
+	-- 以前在<select>语句中要带parameterType的，现在可以不要这样写。
+	6.使用 对象+属性名 传递参数
+		java传入对象，xml里面用 #{属性名} 获取参数值。
+		
+返回值
+	1.用resultmap指定对象类型（超能项目大部分这么用）。
+	2.用 resulttype="hashmap" 将返回值放到一个map里面。	
+	3.用resulttype指定对象类型。
+	
+返回自动生成的主键
+	给<insert>标签添加 useGeneratedKeys="true" keyProperty="id" ，然后传入参数是一个对象，insert之后，会把自动生成的id设置到这个对象的id属性。
+	
+使用SqlSessionFactoryBean操作
+	SqlDynamicColumnsWrap中使用SqlSessionFactoryBean获取了ResultMapping（mybatis返回的property、column）
+
+使用mybatis（不依赖数据库）自动生成主键
+	<selectkey>标签。
+		
+关于resultMap！！！
+	select返回的列名如果和属性名相同，不需要在resultMap中配置，会直接映射到同名属性上。
+	如果超类已经配置了，子类不用再配置继承自超类的属性。
+	
+	
+分页
+	<plugin>可以配置一些插件，用于拦截sql语句的执行（类似spring mvc拦截器，aop等）。
+	其中，有用于分页的插件。拦截sql语句后拼接limit语句。
+	
+mybatis-generator
+	有哪些配置项。
+	
+	
+	
+	

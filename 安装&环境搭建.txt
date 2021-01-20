@@ -1,0 +1,228 @@
+
+adobe acrobat
+	设置温度背景为墨绿色
+		编辑--首选项--辅助工具--文档颜色选项--替换文档颜色--自定义颜色，页面背景，换成墨绿色。
+
+git安装
+	tortoiseGit需要基于git.exe。两者都是一路next就行。
+		
+java
+	部署ss
+		eclipse的export，打war包
+		放到tomcat的webapps下面
+		tail -f catalina.out，同时重启tomcat。
+		-- tomcat会自动deploy war包，包括lib里面依赖的类库，都自动会有。
+		-- ss的访问路径是怎么决定的？？？是application.properties里面的context=SS配置？
+		-- 默认路径是http://192.168.159.128:8080/cnweb_ss/initLogin，即localhost:8080/你的项目名字/首页路径
+	http://192.168.159.128:8080/SS/index
+	http://192.168.159.128:8080/SS/initLogin
+	http://192.168.159.128:8080/cnweb_ss/initLogin
+	http://192.168.159.128:8080/cnweb_ss/initLogin
+	
+	E:\workplace\eclipseEE-64-commit\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps
+	
+	安装jdk
+		在紧接着指定安装jre目录时，需要和jdk目录分开！！！
+	
+mongoDb
+	运行msi文件。
+	创建data文件夹：D:\software-data\mongoDb\data
+	切换到mongodb的安装目录的bin目录下（或者配置环境变量），输入： mongod --dbpath D:\software-data\mongoDb\data  
+	（E:\anzhuangDev\mongoDb\bin\mongod --dbpath D:\software-data\mongoDb\data）
+	（D:\anzhuang-dev\mongodb\bin\mongod --dbpath D:\app-all\data\mongodb）
+	出现waiting for connections on port 27017 （此时数据库就已经启动）
+	新建一个窗口，输入mongo（注意没有d），进入命令行。
+	
+	关闭
+		输入mongo，进入shell。
+		use admin
+		db.shutdownServer()
+		
+mysql
+	zip包安装
+		解压。D:\anzhuang\mysql-8.0.18-winx64
+		解压后的目录下，新建my.ini，按网上搜的配置内容进行配置。
+		以管理员方式运行命令窗口。-- 开始菜单右键，选择“windows powershell 管理员”。
+		在切换到安装目录的bin目录下，./mysqld --initialize  ， 然后 ./mysqld install  ， 然后 net start mysql 即可启动服务。 
+		如果有问题，要重新装，可以用   ./mysqld -remove  删除安装的服务。
+		到配置的日志目录下查看日志文件，看看启动、运行有无报错。
+		查看log_err.log文件，里面有为root生成的临时密码：Xej*TUjH7B%L
+		
+
+
+python
+	安装后，环境变量就是安装目录。
+	
+	安装pip
+		windows
+			https://pypi.python.org/pypi/pip#downloads  下载pip。解压。cmd，d:，输入pip文件夹路径，python setup.py install，即可安装。
+			添加环境变量%PYTHON_HOME%\Scripts，%PYTHON_HOME%即python的安装目录。。注意pip的环境变量是pthon安装目录下的Scripts子目录。
+		linux
+			上传setuptools-35.0.2.zip
+			yum install unzip安装unzip。
+			unzip setuptools-35.0.2.zip
+			cd setuptools-35.0.2
+			python setup.py install
+			报错no module named six.moves
+			yum install python-six
+			python setup.py install
+			报错No module named packaging.version
+			先yum search python2-pip，如果没有就yum install epel-release再搜索。
+			更新到最新版pip：pip install --upgrade pip
+
+	安装virtualenv
+		1.
+			pip install virtualenv
+			mkdir python-env1
+			virtualenv --distribute python-env1
+			cd python-env1
+			source bin/activate   -- 激活，执行后命令行的前缀变了。
+			deactivate	-- 离开。
+		
+		2.
+			yum install python-virtualenv
+
+	安装scrapy
+		在virutalenv中
+			pip install scrapy
+			失败。仔细查看日志，发现是没有安装gcc
+			yum install gcc
+			又报错。
+			yum install openssl-devel
+			pip install scrapy
+			成功。
+			
+	安装/卸载模块
+		// 除了pip安装，也可以直接下载，解压后切换到目录，用python setup.py install安装。
+		卸载：pip uninstall xxx
+		安装.whl：pip install D:\user\89004990\Downloads\cx_Oracle-6.0.3-cp36-cp36m-win_amd64.whl
+		
+	centos安装python
+		http://blog.csdn.net/nuli888/article/details/51957127
+		安装依赖
+			yum -y groupinstall "Development tools"
+			yum -y install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel
+
+		https://www.python.org/ftp/python/3.6.1/
+		wget https://www.python.org/ftp/python/3.6.1/Python-3.6.1.tar.xz
+		tar xf Python-3.*
+		./configure
+		make	-- 或者连用：make && make install
+		make install
+		
+		装完了之后发现已经有pip3了。
+		
+		安装virtualenv
+			pip3 install virtualenv
+			进入：source myenv/bin/activate
+			退出：deactivate 
+		
+		
+redis
+	上传 redis-3.2.6.tar.gz。
+	tar xvfz redis-3.2.6.tar.gz 。
+	tar xvzf  redisXXX.tar.gz文件
+	切换到解压后的redis目录下
+	yum install gcc
+	make
+	make install
+	// 以后台运行的方式启动redis
+	cd 到src目录下, redis-server &
+	// 测试是否启动成功，返回PONG表示启动成功
+	cd 到src目录下，redis-cli ping
+	// 进入命令行操作模式
+	redis-cli
+	// 退出命令行操作模式
+	quit
+	=============
+	启动：/root/testDir/redis-3.2.8/src，./redis-server &   （nohup ./redis-server &）
+		ps -ef|grep redis 可以看到  ./redis-server *:6379 进程
+	停止：./redis-cli  shutdown
+	配置
+		解压目录下，vi redis.conf
+		输入 / 进入搜索字符串模式，搜bind，默认是bind 127.0.0.1，这个要注释掉才能外网连。
+		继续搜 protected，注释掉 projected yes，加一行 projected no
+		配置完上面两项，外机就能连了。
+		设置密码，需要搜 requirepass（用vim的搜索），添加一行 requirepass redis2017
+	修改配置后，保存，但是重启没有效果。需要在启动命令后加上配置文件./redis-server ../redis.conf
+	
+	windows安装redis
+		参考：http://www.cnblogs.com/M-LittleBird/p/5902850.html
+		windows版redis下载地址（版本有点老）：https://github.com/MSOpenTech/redis/releases
+		解压Redis-x64-3.2.100 (1).zip
+		cmd切换到解压后的目录，运行命令：redis-server redis.windows.conf
+	
+spring源码导入eclipse
+	配置java环境变量为jdk8
+	参照import-into-eclipse.bat里面说明的步骤：
+		cmd切换到spring源码目录下，命令行输入  gradlew --no-daemon cleanEclipse :spring-oxm:compileTestJava eclipse -x :eclipse
+		-- 但是报错connnection reset，看出是下周gradle3.5.1的时候网络连接异常，所以这个版本对应的gradle版本应该是3.5.1
+		换成 gradle eclipse -x :eclipse命令
+		gradle cleanidea eclipse
+		gradle build
+		
+	换了匹配的gradle-3.5.1-bin，使用gradle eclipse -x :eclipse命令，build successfully
+	有红叉和红感叹号
+	eclipse安装groovy插件
+		
+tomcat7
+	tar -xcf fileName.tar.gz
+	
+	安装jdk
+		下载 .tar.gz
+		 tar -zxvf .tar.gz
+		 修改/etc/profile
+			# jdk info
+			JAVA_HOME=/usr/jdk8/jdk1.8.0_121
+			JRE_HOME=/usr/jdk8/jdk1.8.0_121/jre
+			CLASS_PATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib
+			PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+			export JAVA_HOME JRE_HOME CLASS_PATH PATH
+
+		 source /etc/profile
+		 java -version
+		 
+	切换到tomcat的bin下，执行./startup.sh
+	
+	添加8080端口及对应tcp协议到防火墙
+		firewall-cmd --permanent --add-port=8080/tcp
+		systemctl restart firewalld
+	
+	http://192.168.159.128:8080/，出现apache tomcat首页。
+	
+wireshark
+	常规安装方法
+	安装时勾选了winpcap，usbpcap的安装，并且设置了boot time启动其driver
+	
+zookeeper
+	windows
+		解压zookeeper-3.5.3-beta.tar.gz
+		bin目录下，zkEnv.cmd的set JAVA_HOME修改为实际jdk路径
+		-- 看了下这个cmd脚本，实际上本机已经设置了JAVA_HOME的环境变量，所以这儿不需要动
+		如果已用8080端口，在conf目录下的zoo.cfg配置文件里加上admin.serverPort=***端口
+		也要看看别的配置项是否有需要改动的。比如dataDir。
+		-- conf下面刚开始没有zoo.cfg，只有一个样例zoo_sample.cfg，复制这个样例创建zoo.cfg即可。
+		运行zkServer.cmd，如果一闪而过说明没有起成功。看打印出来的日志可以判断是否运行正常		
+	
+zheng
+	========================================================
+	import--git--clone uri--import general project
+	eclipse, 右键，config, config to maven project
+	maven--compile
+	新建zheng数据库，导入project-datamodel文件夹下的zheng.sql
+	项目右键，config--convert to maven project
+	项目右键，config--convert to faceted form，在配置中多勾选一个Dynamic web module
+	build path没有maven dependencies：
+		下面这一段添加到.classpath里面
+		<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+			<attributes>
+				<attribute name="maven.pomderived" value="true"/>
+				<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
+			</attributes>
+		</classpathentry>
+		
+	====================
+	git检出到本地后，import--maven project，导入maven项目即可
+	
+	
+

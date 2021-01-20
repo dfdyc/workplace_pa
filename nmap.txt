@@ -1,0 +1,10 @@
+
+yum install -y nmap
+
+nmap -sn -PE --send-ip 151.101.72.233
+相当于ping www.python.org
+
+
+
+
+

@@ -1,0 +1,62 @@
+============ old ================
+centOS安装后默认不自动启用网卡，解决方法：
+	http://www.111cn.net/sys/CentOS/63645.htm
+	cd  /etc/sysconfig/network-scripts/，
+	vi  ifcfg-eno16777736，
+	只需要加一句 ONBOOT=yes，让其自动配置即可。
+	// 不需要用ifconfig，ip addr就行
+	然后yum search ifconfig，找到ifconfig在net-tools.x86_64里，
+	然后yum install net-tools.x86_64。
+	然后yum install mlocate。
+	然后yum install finger。
+	yum install bc。
+	yum install lsof
+	yum install gedit
+	
+	yum install xinetd
+	yum install telnet
+	yum install telnet-server
+	service xinetd restart
+	chkconfig telnet on
+	
+	开放3306端口
+	centos6及以下版本：/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+	centos7：firewall-cmd --zone=public --add-port=1521/tcp --permanent
+		重启生效：systemctl [start|stop|restart] firewalld.service 
+		查看开放的端口firewall-cmd --list-ports
+		
+===========
+安装jdk
+/etc/profile加入：
+JAVA_HOME=/app/jdk1.7.0_79
+JRE_HOME=/app/jdk1.7.0_79/jre
+CLASS_PATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib
+PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+export JAVA_HOME JRE_HOME CLASS_PATH PATH
+
+====  20170627  ======
+安装图形化GUI
+	yum groupinstall -y "GNOME Desktop" "Graphical Administration Tools"
+	ln -sf /lib/systemd/system/runlevel5.target /etc/systemd/system/default.target
+	重启
+	
+	图形化登录时，要创建用户，不是重新输入已有的用户，而是让创建一个新的。
+
+systemctl status network
+systemctl restart network
+ip addr
+ping 只能ping ip，没法ping域名
+
+路由器环境下：
+安装后ping外围一直报network is unreachable
+把nat改成桥接模式，勾选使用物理机网络连接，
+然后ip addr发现有ip地址了，和物理机的ip不一样，
+然后重启network，就能ping通外网了，
+
+中文乱码
+echo $LANG，需要是en_US.UTF-8
+export LANG=en_US.UTF-8
+
+
+
+

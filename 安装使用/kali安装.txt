@@ -1,0 +1,13 @@
+选择debian 6 64bit
+
+选择graphic install
+
+root: kali2017
+
+guided:user entire disc
+
+all files in one position
+
+yes/no时，都选yes
+
+/dev/sda

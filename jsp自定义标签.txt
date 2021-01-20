@@ -1,0 +1,50 @@
+
+自定义标签
+	有两种形式
+		1.<%@ taglib uri="/WEB-INF/tlds/base.tld" prefix="cn"%>
+			java + tld 的形式。
+		2.<%@ taglib prefix="cntags" tagdir="/WEB-INF/tags"%>
+			/WEB-INF/tags目录下面是“.tag”文件，在使用“cntags:xxx”的时候，会查找该目录下的“xxx.tag”文件。
+			例：
+				<cntags:confirmButton fn="" message="确认所有信息无误提交？"></cntags:confirmButton>
+				在confirmButton.tag里，用${fn }、${message }接收标签的属性值。
+			
+	java层面
+		继承javax.servlet包的TagSupport，有很多复杂的用于控制流程的方法和常量。但是FileUploadTag仅使用了doStartTag()。
+		对象属性对应标签的属性，可以在setter中加入格式转换控制。	
+			
+	超能系统
+		分页标签<page:page>
+			PageTag.java
+				继承TagSupport。
+				仅使用了doStartTag()。
+					使用JspWriter输出了html，并返回用于流程控制的int值。
+			
+			Page.tld
+				标签描述文件。
+			
+el表达式
+	el表达式有三元表达式
+			cnweb--verify.jsp：<td>${item.value.chooseType eq 'optional'?'可选':'必选'}</td>
+			/cnweb_sa/src/main/webapp/WEB-INF/views/page_index.jsp：${isSa ?'' : 'display:none;' }
+			
+	可以用foreach遍历map，然后用"value"取map的值
+			cnweb--verify.jsp：
+					<c:forEach items="${attachMap}" var="item" varStatus="status">
+							<c:if test="${item.value.source eq 'Bef_Loan'}">
+							
+					以上 attachMap 在后台是  Map<String, LoAttachInfoRes> 类型，用foreach遍历得到每一个子项，然后用value得到子项的值。
+
+	---------------
+	<a href="javascript:toUpdate('${mdl.id}','${mdl.modifiedon}');" class="btn default btn-xs ">
+														<i class="fa fa-edit"></i>编辑 </a>
+			此处el表达式需要加单引号，否则会报错。
+			如果el得到的内容有双引号，el需要用单引号，否则会因为边界识别错误而出错，原因和sql注入一样。
+	------------------
+	js中使用el表达式，只需加上单/双引号即可。(指的是jsp中的js，单独.js文件中的js没法用el)
+
+
+			
+			
+			
+		

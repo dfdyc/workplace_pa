@@ -1,0 +1,148 @@
+
+
+jms
+
+windows
+	activemq
+		下载zip，解压，cmd窗口切换bin目录下，启动：start /b activemq start（start /b 是为了让程序后台运行），停止：activemq stop，监控页面：http://localhost:8161/admin/，用户名密码都是admin。
+		D:\anzhuang-dev\apache-activemq-5.15.0-bin\bin\activemq start
+		D:\tools\apache-activemq-5.11.0-bin\bin\activemq start
+	
+	rabbitMq
+		安装erlang
+			http://www.erlang.org/downloads
+			配置环境变量。cmd输入erl看是否配置成功。
+		解压rabbitMq的zip。
+		根据readme-service.txt里面的解释，RABBITMQ_BASE这个环境变量控制一些输出文件的路径。测试有效。
+		// 其它机器的路径前缀：D:\anzhuang-dev\rabbitmq-server-windows-3.6.12\sbin\rabbitmqctl change_password guest guest
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmq-plugins enable rabbitmq_management // 这句是在未启动状态执行，报错，似乎应该在启动状态执行。
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmq-server start 
+		// 新增用户，及密码。
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmqctl add_user root root
+		// 设置角色，这儿设置成管理员
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmqctl set_user_tags root administrator
+		// 查看用户
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmqctl list_users
+		// 修改用户guest的密码
+		D:\tools\rabbitmq-server-windows-3.6.12\sbin\rabbitmqctl change_password guest guest
+		http://localhost:15672 
+	
+	
+activemq
+	配置
+		connectionFactory：org.apache.activemq.ActiveMQConnectionFactory，配置属性：ip，端口。
+		queue：org.apache.activemq.command.ActiveMQQueue，配置属性：名字。
+		topic：org.apache.activemq.command.ActiveMQTopic，配置属性：名字。
+		jmsTemplate
+		jms:listener-container
+			配置属性：监听的目的queue/topic（destination），处理消息的类名，方法名。
+	发送数据
+		jmsTemplate.convertAndSend("first.queue", strMsg)，第一个参数是配置的queue的名字（不是bean的id），第二个参数是数据。
+	接收数据
+		直接用方法的形参接收数据。
+		
+	收发模型
+		点对点
+			queue。消息被某个消费者取出后就消失，别的消费者不会再取到了。
+		发布订阅
+			topic。消息可以被任意多个消费者多次取用。
+rabbitMq
+	官网有例子（各种实现，包括spring amqp）：https://www.rabbitmq.com/getstarted.html 
+		官网的6个例子的实现
+			/** 1 2是queue，直接发送，消费者数量不同，没有用exchange，也不用binding。用了listener。
+				3 4 5用了不同种类的exchange。
+			**/
+			hello world
+				一对一。一个生产者往队列hello发送消息，一个消费者监听这个队列，接收消息。没有用exchange，也不用binding key, routing key. 
+				配了listener。@RabbitListener，@RabbitHandler。
+			work queues
+				点对点，一对多。一个生产者往队列hello发送消息，多个消费者监听这个队列，一个消息只能被其中一个消费者接收。也不需要exchange路由。
+				配了listener。@RabbitListener，@RabbitHandler。
+			publish/subscribe
+				fanout pattern，published messages are going to be broadcast to all the receivers.
+				配了FanoutExchange，将两个队列绑在了上面，但是没有指定bind的routing key，因为fanout是广播。
+				生产者往这个exchange发送消息的时候不需要指定routing key，因为fanout是广播（发送给所有bind的queue），指定了也会被忽略。
+			
+				The core idea in the messaging model in RabbitMQ is that the producer never sends any messages directly to a queue. 
+				Actually, quite often the producer doesn't even know if a message will be delivered to any queue at all
+				Instead, the producer can only send messages to an exchange.
+			routing
+				direct exchange. 队列在bind exchange时指定binding key，可以指定多个，发送方发送给exchange的时候指定routing key，exchange会将消息路由到binding key = routing key
+				的那个队列上。不同队列的binding key是独立的，可以重复，如果重复了就两个都匹配到都可以接收。接收方监听的是队列，队列有消息了就可以收到。
+			topics
+				跟routing相似，区别是用了topic exchange，binding key是通配符形式。
+			rpc
+				DirectExchange。binding的时候指定了“rpc”（.with("rpc")）.
+	概念（互相之间的关系）
+		路由（exchange）。
+		queue。
+		routing key
+		binding key
+	收发模型（路由模型）
+		direct
+			与binding key进行“相等”匹配。
+		topic
+			与binding key进行“通配符”匹配。
+		headers
+		fanout
+			不管什么binding key都可以接收。
+		
+websocket
+	低层级实现
+		配置
+			使用java配置，registry.addHandler(firstWebsocketHandler(), "/firstWebsocket")，添加这个路径是js建立websocket连接时使用的路径。第一个参数返回的是处理这个连接的类。
+		服务器处理
+			继承AbstractWebsocketHandler，重写处理连接的方法。
+		浏览器接收
+			
+	stomp
+		配置
+			registry.addEndpoint("/firstStompEndpoint")
+				这个是js建立websocket连接时使用的路径，客户端不会使用这个路径收发消息。
+				？？？如果要配多个websocket连接，endPoint怎么与其它的发送、订阅url关联？？？
+			registry.enableSimpleBroker("/queue", "/topic","/jms_v2")/registry.enableStompBrokerRelay("/queue", "/topic")
+				浏览器接收消息（stomp.subscribe("/topic/marco", handlePolo)）的路径的前缀。服务器发送的消息都是发送给消息代理，浏览器想要收取消息必须从消息代理订阅。
+			registry.setApplicationDestinationPrefixes("/app","/firstStompADP")
+				浏览器发送消息的路径的前缀。服务器注解一个@MessageMapping("/macro")来接收这个消息。
+		服务器处理
+			浏览器发起的建立连接的请求
+			浏览器发送的数据
+				@MessageMapping
+				@SubscribeMapping
+					？？？不确定？？？
+					普通情况是浏览器从消息代理订阅registry.enableSimpleBroker()设置的开头的路径，但是对于SubscribeMapping是浏览器发送完请求后可以直接收到返回值，不用从消息代理订阅。	
+			浏览器订阅的数据
+				1.在@MessageMapping注解的方法中，加一个@SendTo("/topic/shout")，返回值就会发送到消息代理的这个url的队列，浏览器订阅了消息代理这个url的队列的话就会收到。
+				2.@SubscribeMapping
+				3.服务器在任意地方simpMessagingTemplate.convertAndSend("/topic/marco", msg)，浏览器订阅了这个地址的话就能收到。
+		浏览器端
+			建立连接
+				地址是registry.addEndpoint()
+			发送数据
+				地址是registry.setApplicationDestinationPrefixes
+				stomp.send("/app/marco",'msg')
+			订阅数据
+				地址是registry.enableSimpleBroker() 
+				stomp.subscribe("/topic/marco", function(){});
+				
+kafka
+	有中文官方文档：https://kafka.apachecn.org/quickstart.html 。
+		主题是以消费者组（一个逻辑上的消费者）为单位分发的，一个主题广播给所有消费者组（发布订阅模式）。一个主题有多个分区，一个分区只能对应一个消费者，但一个消费者可以有多个分区。
+	安装
+		需要安装jdk和zookeeper。但是解压之后发现kafka自带zookeeper。conf文件夹下面kafka自己的配置文件server.properties，zookeeper的配置文件zookeeper.properties 都要配置。
+		
+	spring与kafka整合官方文档：https://spring.io/projects/spring-kafka#samples  
+	
+	概念
+		主题。分区。
+			主题是以消费者组（一个逻辑上的消费者）为单位分发的，一个主题广播给所有消费者组（发布订阅模式）。一个主题有多个分区，一个分区只能对应一个消费者，但一个消费者可以有多个分区。
+	实现了什么功能？（产生的背景。基本的概念。可用于哪些场景）
+	
+	哪些配置项？
+	
+	
+		
+		
+		
+		
+		

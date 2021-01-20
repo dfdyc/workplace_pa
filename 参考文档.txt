@@ -1,0 +1,113 @@
+
+人才引进测评与申报系统
+https://sz12333.gov.cn/rcyj/
+
+linux
+http://man.linuxde.net/
+http://www.runoob.com/linux/linux-command-manual.html
+// Bash Reference Manual
+http://www.gnu.org/software/bash/manual/bash.html
+http://www.doxer.org/bash-reference-manual-txt-pdf-download/
+// gawk
+http://www.gnu.org/software/gawk/manual/gawk.html
+
+
+设计模式
+// 有英文名称，用来搜wiki
+http://www.runoob.com/design-pattern/composite-pattern.html    
+https://en.wikipedia.org/wiki
+
+
+// MySQL Reference Manual
+https://dev.mysql.com/doc/refman/5.7/en/
+https://dev.mysql.com/doc/refman/5.6/en/
+// mysql存储程序
+https://dev.mysql.com/doc/refman/5.7/en/stored-programs-views.html   
+// 存储程序body内语句的语法
+https://dev.mysql.com/doc/refman/5.7/en/sql-syntax-compound-statements.html
+// 优化select
+https://dev.mysql.com/doc/refman/5.6/en/select-optimization.html
+
+java
+http://docs.oracle.com/javase/specs/index.html
+
+spring
+http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/
+spring-github
+https://github.com/spring-projects/spring-framework
+spring源码解析
+http://www.cnblogs.com/dazhaxie/archive/2012/06/18/2553300.html
+
+dubbo
+-- http://dubbo.io/User+Guide-zh.htm
+http://dubbo.io/Download-zh.htm
+http://dubbo.io/user-guide/
+
+UML
+http://www.uml.org.cn/oobject/201104212.asp
+
+powershell
+http://files.cnblogs.com/files/BTQ/EffectiveWindowsPowerShell.pdf
+http://www.pstips.net/powershell-online-tutorials/
+
+github
+
+分布式多店铺电商系统，使用技术：spring 、springmvc、mybatis、maven、html5、jquery、freemarker、Redis（缓存服务器）、Solr（搜索引擎）、Dubbo（调用系统服务）、Nginx（web服务器）、FastDFS（文件服务器）、Shiro（权限框架）、Zookeeper（分布式应用程序协调服务）
+https://github.com/pzhgugu/goshop
+A Powerful Spider(Web Crawler) System in Python.
+https://github.com/binux/pyspider
+A scalable web crawler framework for Java. 
+https://github.com/code4craft/webmagic
+Scrapy, a fast high-level web crawling & scraping framework for Python. 
+https://github.com/scrapy/scrapy
+My Python Examples
+https://github.com/geekcomputers/Python
+Python and Powershell internal penetration testing framework
+https://github.com/praetorian-inc/pentestly
+
+python
+https://github.com/vinta/awesome-python
+http://www.pythontab.com/
+http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000
+https://docs.python.org/3/tutorial/
+https://docs.python.org/3/library/index.html
+爬虫简易教程
+https://github.com/lining0806/PythonSpiderNotes
+知乎py3爬虫
+https://github.com/7sDream/zhihu-py3
+requests包api
+http://docs.python-requests.org/en/master/api/
+
+scrapy
+http://scrapy-chs.readthedocs.io/zh_CN/latest/  -- 版本太过时了
+https://doc.scrapy.org/en/latest
+
+mongoDb
+https://docs.mongodb.com/manual/introduction/
+https://docs.mongodb.com/
+https://docs.mongodb.com/manual/core/document/
+http://www.yiibai.com/mongodb/
+
+drools
+http://www.drools.org/learn/documentation.html
+http://www.jianshu.com/p/697b756b7453
+http://docs.jboss.org/drools/release/5.5.0.Final/drools-expert-docs/html_single/index.html
+http://blog.csdn.net/u012373815/article/details/53907340
+http://www.mamicode.com/info-detail-1481905.html
+http://blog.csdn.net/qq1010885678/article/details/51007446
+// pdf参考手册，可以用来搜关键字
+https://docs.jboss.org/drools/release/7.1.0.Final/drools-docs/html_single/index.html
+
+zheng
+https://github.com/shuzheng/zheng
+
+freemarker
+http://freemarker.foofun.cn/dgui_quickstart_basics.html
+
+oracle
+https://docs.oracle.com/cd/E11882_01/server.112/e41084/title.htm
+
+kafka
+http://orchome.com/kafka/index
+
+

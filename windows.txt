@@ -1,0 +1,37 @@
+﻿
+查找局域网所有ip
+	arp -a
+
+根据ip解析主机名
+	nbtstat -a 192.168.150.3
+	ping -a 195.168.150.3
+
+查看端口号占用
+	netstat -aon|findstr "1099"，最左侧是进程号，然后用tasklist|findstr "5688"查看该进程是哪个程序。
+
+修改文件编码格式
+	iconv -f GBK -t UTF-8 index.html > index2.html
+
+复制文件
+	echo yes|copy "D:/test-file.txt" "D:/test-file.txt.bak"
+复制文件夹
+	echo d|xcopy "D:/test-dir" "D:/test-dir.bak" /e
+
+windebug
+	查看dump文件
+		右键，以管理员身份打开。
+		// 第一次使用 begin
+		// 应对your debugger is not using the correct symbols错误
+		c盘创建Symbols目录，在Windbg菜单上选择File->Symbol File Path，输入命令SRV*C:\Symbols*http://msdl.microsoft.com/download/symbols，建议勾选上reload。
+		// 第一次使用 end
+		file->open crash dump，从C:\Windows\Minidump下面打开.dump文件。
+
+取消登陆密码
+	控制面板-->账户-->登录选项-->密码，将密码设置为空即为取消密码。
+
+chrome
+	设置某个网站默认启用flash：在地址栏的url前面有个图标，会表示安全或者不安全，点这个图标，点网站设置，就可以选择允许flash。
+
+计算文件md5值
+	certutil -hashfile 1.txt md5  
+

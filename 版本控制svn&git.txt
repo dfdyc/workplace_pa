@@ -1,0 +1,125 @@
+
+
+centos 6/8 安装svn（客户端和服务器）
+	yum install subversion
+	yum install mod_dav_svn
+
+	cd到用户目录下，mkdir svn，	创建一个测试用的仓库：svnadmin create ./repo_temp，然后ll可以看到生成了一些文件。
+	cd conf，设置配置文件。
+	vim svnserve.conf，添如下内容（默认是被注释掉的，去掉注释符号即可）
+		anon-access = read
+		auth-access = write
+		password-db = passwd
+		authz-db = authz 
+		realm = first_repo
+	vim passwd，添加：first_user = 12345。上述内容意思是添加用户first_user，密码是12345
+	vim authz，添加：
+		[/]
+		first_user=rw
+		w=r
+		
+	svnserve -d -r /root/self/svn/repo_temp
+	svn默认开的端口是3690
+	
+	查看进程：ps -ef|grep svn
+	查看端口状态：netstat -ln |grep 3690
+	
+	查看开放的端口：	/etc/init.d/iptables status
+	开放3690端口：
+		// iptables -A INPUT -p tcp --dport 3690 -j ACCEPT
+		// -A是在后面追加，-I是在最开头插入。-I可以生效，-A似乎不能生效。
+		iptables -I INPUT -p tcp --dport 3690 -j ACCEPT
+	保存：/etc/rc.d/init.d/iptables save
+	重启防火墙：/etc/init.d/iptables restart
+	可以直接修改iptables配置文件里的规则：vi /etc/sysconfig/iptables
+	
+	svn://192.168.246.129:3690
+
+svn
+    -- ok，第一个版本号是比较的起点，而不是需要合并的的第一个版本，需要比需要合并的第一个版本小一个版本号
+    svn merge -r 52640:53312 http://192.168.200.233:8888/svn/CN/Develop/projects/branches/SIT/cnweb_sc
+
+    -- ok，第一个版本号是比较的起点，而不是需要合并的的第一个版本，需要比需要合并的第一个版本小一个版本号
+    svn merge -r 53312:53333 http://192.168.200.233:8888/svn/CN/Develop/projects/branches/SIT/cnweb_sc D:\workplace\eclipse3\cnweb_sc-uat
+
+    svn和git的区别
+        svn可以按版本号进行合并，git不能？
+        联金所的git:
+            比如6月6号投产，开发前，从rel拉一个分支进行开发，同时从rel拉一个sit分支，
+            对应6月6号上线的版本（即所有6月6号上线的版本都合并到这个分支），开发完成后，本地分支合并到6月6号sit分支，
+            测试完成后，合并到rel分支，然后用rel分支打版投产包。
+			
+			
+git
+	学习网站	https://git-scm.com/book/zh/v2/%E8%B5%B7%E6%AD%A5-%E5%85%B3%E4%BA%8E%E7%89%88%E6%9C%AC%E6%8E%A7%E5%88%B6
+		https://www.liaoxuefeng.com/wiki/896043488029600
+		
+	概念
+		工作区/暂存区/本地分支/远程分支
+		
+	几种分支模型
+		主分支
+		辅助分支
+			功能分支
+			发布分支
+			修复bug分支	
+		
+	git init
+		创建git仓库
+	git clone
+		把远程仓库复制到本地。
+	git checkout
+		切换分支。
+		丢弃工作区的修改（重新切换一次当前分支就丢弃了？）。
+	git branch
+		创建分支。
+		删除分支：git branch -d fenzhiName
+	git switch
+		切换分支。
+	git add/ git commit/ git push
+		当前实时操作是在工作区。add是提交到暂存区。commit是提交到当前分支。push是推送到远程别的分支。
+	git reset
+		提交到暂存区之后（包括commit到分支），回退到之前的版本。
+	git merge
+	git log
+	git status
+	git diff
+
+github 
+    删除项目和git的关联：有个隐藏的.git文件夹，删除即可。
+
+    删除repository
+        点击仓库，点击上方settings，拉到最下面有个删除
+
+    上传项目
+        github, new repository, Initialize this repository with a README。
+        本地workplace，git clone，输入刚刚创建的仓库的url。
+        如果是新增文件，右键tortoise--add，然后继续下面。
+        修改文件，右键git commit。// 此时看github上并没有，要再push一次
+        右键push，然后看github上就有了。
+        
+    eclipse上传git项目
+        首先github上先建立一个仓库
+        项目右键--team--share project，勾选use or create repositories in parent folder of project。
+        点create repository，点finish。
+        项目就变成git项目了。
+        项目右键--team--commit。
+        项目右键--team--push，url栏填入github上仓库的url。next，source ref:选择master，点击add spec，勾选force update，next，finish，就会出现在github上了。
+        
+        
+    git commit, push, Pull Request的区别	
+        git commit操作的是本地库，git push操作的是远程库。
+        git commit是将本地修改过的文件提交到本地库中。
+        git push是将本地库中的最新信息发送给远程库。
+        Pull Request：像原始仓库发送合并请求，原始仓库管理员收到请求后决定是否接受。
+
+    如果远程仓库改了名字，本地clone的就需要改对应的url（github本身会对就的url进行重定向，同时在commit&push时会提示出来）
+        隐藏的.git文件夹-->config文件，里面有个url，改成新的即可。
+
+tortoise git
+    记住用户名密码：空白处右键--> tortoise git-->settings-->git，有一个save to，选Edit global .gitconfig，加入：
+        [credential]
+            helper = store
+
+
+

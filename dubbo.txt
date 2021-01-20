@@ -1,0 +1,133 @@
+
+ss
+	在cnweb_ss_dubbo_api工程中，定义一些需要的类（提供者和消费者都需要，所以要作为jar被两者引入）：
+		内部（ss自己的）
+			service接口（不需要定义实现类，实现类在ss中定义）
+				要对外提供的接口。参数是SSRequest，返回值是SSResult。对于sc，参数是ScRequest，返回值是ScResult。
+			model
+				EResultHeader
+					是一个enum枚举类，定义错误码信息。
+				SSPage
+					包含分页信息。不包含返回的查询对象。
+				SSRequest
+					
+				SSRequestBody
+					包含一个Map。
+				SSRequestHeader
+					包含分页信息（SSPage对象）。
+				SSResult
+				SSResultBody
+				SSResultHeader
+					包含返回的信息code及描述codeDesc。
+		外部（用到的ss以外系统的）
+		
+	在ss中，实现cnweb_ss_dubbo_api中定义的那些要对外发布的接口。
+	
+	在ss中，在applicationContext-provider.xml（任何一个spring加载的xml都行，dubbo是和spring集合用）中用标签定义对外发布的接口。
+	-- 然后引入dubbo的依赖，就会自动将这些标签内容注册到zookeeper？？？
+		
+	
+	LnAppCashWhiteUserServiceImpl
+		实现步骤：
+			1.做一个dubbo项目（cnss_dubbo_api-1.0.0），里面声明了准备provide的接口（LnAppCashWhiteUserService）。这个项目以jar的形式被服务提供者、消费者引入。
+			2.ss实现这个接口，
+			3.ss配置xml文件，对外提供接口，
+	
+			
+	调用sc工单查询dubbo
+	
+使用步骤
+	1.安装注册中心，配置？
+	2.（doc）定义服务接口: (该接口需单独打包，在服务提供方和消费方共享)
+	-- 需要共享的是 接口以及xxxRequestBody、xxxResponseBody这些参数。
+	3.服务提供者，实现接口，标签暴露接口，配置dubbo.properties，注册到zookeeper。
+	4.服务消费者，用标签引入接口，把这个接口配置成<bean>，像其它bean一样使用。
+	
+配置文件
+	官方文档（目录：属性配置）
+		Dubbo将自动加载classpath根目录下的dubbo.properties，可以通过JVM启动参数：-Ddubbo.properties.file=xxx.properties 改变缺省配置位置。
+		如果classpath根目录下存在多个dubbo.properties，比如多个jar包中有dubbo.properties，Dubbo会任意加载，并打印Error日志，后续可能改为抛异常。
+		xml标签到dubbo.properties的映射规则：
+			将XML配置的标签名，加属性名，用点分隔，多个属性拆成多行：
+			比如：dubbo.application.name=foo等价于<dubbo:application name="foo" />
+			比如：dubbo.registry.address=10.20.153.10:9090等价于<dubbo:registry address="10.20.153.10:9090" />
+			如果XML有多行同名标签配置，可用id号区分，如果没有id号将对所有同名标签生效：
+			比如：dubbo.protocol.rmi.port=1234等价于<dubbo:protocol id="rmi" name="rmi" port="1099" /> (协议的id没配时，缺省使用协议名作为id)
+			比如：dubbo.registry.china.address=10.20.153.10:9090等价于<dubbo:registry id="china" address="10.20.153.10:9090" />
+	dubbo:service
+		提供者配置。
+	dubbo:reference
+		消费者配置。
+		如果是线上需求需要点对点，可在<dubbo:reference>中配置url指向提供者，将绕过注册中心，多个地址用分号隔开，配置如下：(1.0.6及以上版本支持)
+			<dubbo:reference id="xxxService" interface="com.alibaba.xxx.XxxService" url="dubbo://localhost:20890" />
+		
+官方文档
+	http://dubbo.apache.org/zh/docs/v2.7/user/
+	包含部件
+		核心框架
+		管理控制台
+		简易监控中心
+		简易注册中心
+		示例提供者
+		示例消费者
+		
+	第三方角色
+		注册中心（zookeeper）。
+		
+	官方示例
+		貌似没有用注册中心zookeeper，而是提供者用
+			<!-- 使用multicast广播注册中心暴露服务地址 -->
+			<dubbo:registry address="multicast://224.5.6.7:1234" />
+		 
+			<!-- 用dubbo协议在20880端口暴露服务 -->
+			<dubbo:protocol name="dubbo" port="20880" />
+			暴露服务，然后消费者用
+				<!-- 使用multicast广播注册中心暴露发现服务地址 -->
+				<dubbo:registry address="multicast://224.5.6.7:1234" />
+			使用服务。
+	直连提供者
+		在开发及测试环境下，经常需要绕过注册中心，只测试指定服务提供者，这时候可能需要点对点直连，
+		点对点直联方式，将以服务接口为单位，忽略注册中心的提供者列表，
+		A接口配置点对点，不影响B接口从注册中心获取列表。
+		配置如下：	
+			<dubbo:reference id="xxxService" interface="com.alibaba.xxx.XxxService" url="dubbo://localhost:20890" />
+			
+	启动时检查
+		Dubbo缺省会在启动时检查依赖的服务是否可用，不可用时会抛出异常，阻止Spring初始化完成，以便上线时，能及早发现问题，默认check=true。
+			
+	服务分组
+		当一个接口有多种实现时，可以用group区分。		
+			<dubbo:service group="feedback" interface="com.xxx.IndexService" />
+			<dubbo:service group="member" interface="com.xxx.IndexService" />
+			<dubbo:reference id="feedbackIndexService" group="feedback" interface="com.xxx.IndexService" />
+			<dubbo:reference id="memberIndexService" group="member" interface="com.xxx.IndexService" />
+			
+	不注册（只消费服务不提供服务）。
+		可以只使用别人提供的服务，而自身不对别人提供服务。在未开发完成进行调试的时候需要这么做。
+		<dubbo:registry address="10.20.153.10:9090" register="false" />
+	不订阅（只提供服务不消费服务）
+		<dubbo:registry id="qdRegistry" address="10.20.141.150:9090" subscribe="false" />
+		或者：<dubbo:registry id="qdRegistry" address="10.20.141.150:9090?subscribe=false" />
+	不同的协议
+	覆盖策略
+		dubbo的配置方式很多，注意生效优先级。
+	超时
+		提供者和消费者都能配置timeout超时时间。
+			
+	
+dubbo和webservice对比
+	引入需要调用的接口类、用来传递的数据类
+		dubbo是服务方提供一个jar包让消费方引入。
+		webservice是提供一个url，调用方用工具生成这些类，放到自己项目里
+	使用接口类
+		dubbo是用一个标签装配成bean，然后像其它bean一样使用。
+		webservice是用配置工具类生成。
+	配置
+		dubbo是用标签或者配置文件配置。
+		webservice是用配置类进行配置。		
+	webservice与语言无关，可以用任意语言发布然后用任意语言调用。
+	dubbo应该是java双方的。
+
+
+
+

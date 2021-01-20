@@ -1,0 +1,5 @@
+
+在注册表编辑器中，是有以下两处位置负责管理“默认应用”
+HKEY_CLASSES_ROOT
+HKEY_CURRENT_USERSOFTWAREMicrosoftWindowsCurrentVersionExplorerFileExts
+想要“默认应用”不会被系统重置，要保证相同文件关联的应用是一样的

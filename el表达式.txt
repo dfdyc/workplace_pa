@@ -1,0 +1,20 @@
+
+el表达式有三元表达式
+		cnweb--verify.jsp：<td>${item.value.chooseType eq 'optional'?'可选':'必选'}</td>
+		/cnweb_sa/src/main/webapp/WEB-INF/views/page_index.jsp：${isSa ?'' : 'display:none;' }
+		
+可以用foreach遍历map，然后用"value"取map的值
+		cnweb--verify.jsp：
+				<c:forEach items="${attachMap}" var="item" varStatus="status">
+						<c:if test="${item.value.source eq 'Bef_Loan'}">
+						
+				以上 attachMap 在后台是  Map<String, LoAttachInfoRes> 类型，用foreach遍历得到每一个子项，然后用value得到子项的值。
+
+---------------
+<a href="javascript:toUpdate('${mdl.id}','${mdl.modifiedon}');" class="btn default btn-xs ">
+													<i class="fa fa-edit"></i>编辑 </a>
+		此处el表达式需要加单引号，否则会报错。
+		如果el得到的内容有双引号，el需要用单引号，否则会因为边界识别错误而出错，原因和sql注入一样。
+------------------
+js中使用el表达式，只需加上单/双引号即可。(指的是jsp中的js，单独.js文件中的js没法用el)
+

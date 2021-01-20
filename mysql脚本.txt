@@ -1,0 +1,308 @@
+
+##########  version 2  ##########
+
+# 查询每张表的记录数
+use information_schema;
+select table_name,table_rows from tables
+where TABLE_SCHEMA = '数据库名'
+order by table_rows desc;
+
+# 用information_schema的元数据组装sql语句
+# 根据表名模糊匹配进行删除表操作
+SELECT CONCAT( 'DROP TABLE ', GROUP_CONCAT(table_name) , ';' ) statement 
+FROM information_schema.tables WHERE table_schema = '数据库名' AND table_name LIKE '%copy'; 
+
+
+
+-- 教授
+CREATE TABLE `professor` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `NAME` varchar(50) DEFAULT NULL COMMENT '名字',
+  `SEX` varchar(50) DEFAULT NULL COMMENT '性别',
+  `AGE` int(10) DEFAULT NULL COMMENT '年龄',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 学生
+CREATE TABLE `student` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `NAME` varchar(50) DEFAULT NULL COMMENT '名字',
+  `SEX` varchar(50) DEFAULT NULL COMMENT '性别',
+  `AGE` int(10) DEFAULT NULL COMMENT '年龄',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 课程
+CREATE TABLE `course` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `NAME` varchar(50) DEFAULT NULL COMMENT '名字',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 学生-课程绑定关系，用后面的函数+存储过程初始化随机值
+CREATE TABLE `student_course` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `STUDENT_ID` bigint(20) NOT NULL,
+  `COURSE_ID` bigint(20) NOT NULL,
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 操作日志表
+CREATE TABLE `action_log` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `action` varchar(50) DEFAULT NULL COMMENT '动作',
+  `tb_name` varchar(50) DEFAULT NULL COMMENT '表名',
+  `record_id` int(10) DEFAULT NULL COMMENT '操作的记录的id',
+	`old_val` int(10) DEFAULT NULL COMMENT '旧值',
+	`new_val` int(10) DEFAULT NULL COMMENT '新值',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+insert into professor 
+(name,sex,age,update_time,update_user) VALUES 
+('professor1','M',11,NOW(),'admin'),
+('professor2','M',12,NOW(),'admin'),
+('professor3','M',13,NOW(),'admin'),
+('professor4','F',14,NOW(),'admin'),
+('professor5','F',15,NOW(),'admin'),
+('professor6','F',14,NOW(),'admin');
+
+insert into student 
+(name,sex,age,update_time,update_user) VALUES 
+('student1','F',11,NOW(),'admin'),
+('student2','M',16,NOW(),'admin'),
+('student3','F',19,NOW(),'admin'),
+('student4','M',20,NOW(),'admin'),
+('student5','F',22,NOW(),'admin'),
+('student6','M',14,NOW(),'admin');
+
+insert into course 
+(name,update_time,update_user) VALUES 
+('course1',NOW(),'admin'),
+('course2',NOW(),'admin'),
+('course3',NOW(),'admin'),
+('course4',NOW(),'admin'),
+('course5',NOW(),'admin'),
+('course6',NOW(),'admin');
+
+##########    触发器   ##########
+
+-- mysql没有语句级触发器（无论语句影响多少行都只触发一次），只有行级触发器（每一行的操作都会触发一次）
+-- 同样时机、事件的多个触发器可以指定执行顺序
+
+DROP TRIGGER if EXISTS triger_update
+
+DELIMITER &&
+create TRIGGER triger_update 
+BEFORE UPDATE ON professor FOR EACH ROW 
+BEGIN
+	-- 新值小于旧值，新值加10
+	-- new./old.取新旧值
+	if new.age<old.age then
+		set new.age = new.age + 10;
+	-- 流程控制语句、循环语句相当于一条sql，所以最后都有分号。
+	END IF;
+END
+&&
+DELIMITER ;
+
+
+-- select * from professor;
+-- update professor set age=10 where ID=1;
+-- update professor set age=21 where ID=1;
+-- select * from professor;
+
+##############################
+##########    event   ##########
+-- 查看是否开启
+SHOW VARIABLES LIKE 'event_scheduler';
+-- 开启
+SET GLOBAL event_scheduler = ON;
+select now();
+
+drop EVENT if EXISTS test_event1;
+-- 在某个时间点执行一次
+delimiter &&
+create EVENT if not EXISTS test_event1
+	on SCHEDULE AT timestamp('2017-09-19 15:20:00')
+	DO
+	BEGIN
+		update professor set age=0 where ID=1;
+	END
+&&
+delimiter ;
+##############################
+
+##########    函数   ##########
+
+-- 第一个参数是一个以分隔符开头的字符串，第二个参数是分隔符。例：getRandVal('|2313|4|546|0976|532|6123','|')
+-- 随机返回其中一个区间的字符串
+
+drop FUNCTION if EXISTS getRandVal;
+
+DELIMITER &&  
+CREATE FUNCTION getRandVal(original_str VARCHAR(5000),split_cha VARCHAR(5))  
+RETURNS VARCHAR(50)  
+BEGIN  
+-- 日志字符串
+DECLARE _log text default '';
+-- 保存返回结果
+DECLARE res VARCHAR(50) default '';
+-- 传入字符串的长度
+DECLARE original_str_len int; 
+-- 用于后面的截取
+DECLARE rand_idx_begin int;
+DECLARE rand_idx_end int;
+
+set original_str_len = length(original_str);
+-- 第三个参数是0到original_str_len的随机数，如果是0，locate()得到的结果就是0.
+set rand_idx_begin = locate(split_cha,original_str,floor(rand()*original_str_len));
+
+if rand_idx_begin = 0 then
+	set rand_idx_begin = 1;
+end if;
+
+set rand_idx_end = locate(split_cha,original_str,rand_idx_begin+1);
+
+if rand_idx_end = 0 then
+	set res = substring(original_str, rand_idx_begin + 1);
+else
+	set res = substring(original_str, rand_idx_begin + 1, rand_idx_end-rand_idx_begin-1);
+end if;
+
+-- 拼接日志
+set _log = concat(_log,'original_str_len:',original_str_len,',original_str:',original_str,',split_cha:',split_cha,',rand_idx_begin:',rand_idx_begin,',rand_idx_end:',rand_idx_end,',res:',res);
+
+-- debug
+-- RETURN _log;  
+RETURN res; 
+
+END
+&&  
+DELIMITER ;
+
+###################################
+
+##########    存储过程   ##########
+-- 需要依赖上面那个函数getRandVal。
+-- 循环：while, loop, repeat。这三个都可以加label，用leave（相当于break）、iterate（相当于continue）。
+
+drop PROCEDURE if EXISTS pro_student_bind_course;
+
+delimiter &&
+CREATE PROCEDURE pro_student_bind_course()
+BEGIN
+DECLARE log text default '';
+DECLARE course_id int;
+DECLARE course_id_rand int;
+DECLARE course_name VARCHAR(50);
+DECLARE course_num int;
+DECLARE rand_num int;
+DECLARE student_id int;
+DECLARE course_id_all text default '';
+-- 在循环插入的时候，为防止插入同样的值，用这个变量保存已经插入过的值
+DECLARE course_id_exist text default '|';
+DECLARE course_id_all_len int;
+-- mysql没有boolean，有四个常量：true,false,TRUE,FALSE,分别代表1,0,1,0。
+DECLARE cur_cou_done tinyint(1) default false;
+-- DECLARE cur_stu_done tinyint(1) default false;
+
+-- cursor, handler必须放在普通变量声明之后
+DECLARE CURSOR_STU CURSOR for (select id from student);
+DECLARE CURSOR_COU CURSOR for (select id,`NAME` from course);
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET cur_cou_done = TRUE;
+-- 没法定义俩同样的handler，多个游标要共用一个handler。
+-- DECLARE CONTINUE HANDLER FOR NOT FOUND SET cur_stu_done = TRUE;
+
+set cur_cou_done = false;
+set course_num = (select count(*) from course);
+
+truncate table student_course;
+START TRANSACTION;
+
+-- 查询所有course的id，拼接成一个字符串，用于后面产生随机截取一个id
+open CURSOR_COU;
+
+-- 必须在fetch后加一个判断，否则会多执行一遍。
+-- while cur_cou_done != 1 
+-- do
+-- 	FETCH CURSOR_COU into course_id,course_name;
+-- 	if not cur_cou_done then
+-- 		set course_id_all = concat(course_id_all,'|',course_id);
+-- 	end if;
+-- end while;
+
+REPEAT
+	FETCH CURSOR_COU into course_id,course_name;
+	if not cur_cou_done then
+		set course_id_all = concat(course_id_all,'|',course_id);
+	end if;
+UNTIL cur_cou_done END REPEAT;
+
+close CURSOR_COU;
+
+-- debug
+-- set course_id_all = '|1231|221|3213|2|2325|6|126';
+
+set course_id_all_len = LENGTH(course_id_all);
+
+set log = concat(log,'course_id_all:',course_id_all,', course_id_all_len:',course_id_all_len);
+
+set course_id_exist = '|';
+
+set cur_cou_done = false;
+open CURSOR_STU;
+while cur_cou_done != 1 
+do
+	FETCH CURSOR_STU into student_id;
+	if not cur_cou_done then
+		-- 产生一个0--5的随机整数，可能是0，不会是5（因为rand()产生的数 0<x<1）。
+		set rand_num = floor(rand()*5);
+		loop1:loop
+			
+			if rand_num<0 then
+				leave loop1;
+			end if;
+			set rand_num = rand_num - 1;
+			
+			-- 调用自定义的获取随机course_id的函数
+			set course_id_rand = getRandVal(course_id_all,'|');
+			
+			if locate(concat('|',course_id_rand,'|'),course_id_exist) = 0 then
+				set course_id_exist = concat(course_id_exist,course_id_rand,'|');
+			
+				insert into student_course 
+				(STUDENT_ID,COURSE_ID,update_time,update_user) VALUES 
+				(student_id,course_id_rand,NOW(),'admin');	
+				
+			else
+				iterate loop1;
+			end if;
+		
+		end loop loop1;
+	end if;
+end while;
+close CURSOR_STU;
+-- 执行结束后，查询log
+-- select log;
+COMMIT;
+end &&
+delimiter ;
+
+-- call pro_student_bind_course();
+
+##############################
+
+/******************************/
+	
+	

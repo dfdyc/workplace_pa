@@ -1,0 +1,21 @@
+
+
+安装
+	浏览器安装vue-devtools
+	
+	官网的vue.js下载不了，可能是代理问题，用 
+			npm config delete proxy
+			npm config delete https-proxy
+			删除设置的代理。
+	
+	使用方式1	
+		在项目目录下面，npm init初始化一下（配置的时候全部回车用默认的就可以）。
+		然后npm install vue安装
+		
+	使用方式2
+		官网下载的vue.js放到项目目录下，在html里面用<script>引用就可以了，跟引用jquery一样。
+
+
+
+
+

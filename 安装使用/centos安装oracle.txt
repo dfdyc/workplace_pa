@@ -1,0 +1,224 @@
+
+groupadd oinstall;
+groupadd dba;
+groupadd backupdba;
+groupadd osdgdba;
+groupadd kmdba;
+useradd -g oinstall -g dba -m oracle
+usermod -a -G backupdba oracle
+usermod -a -G osdgdba oracle
+usermod -a -G kmdba oracle
+usermod -a -G oinstall oracle
+// 查看oracle所属群组：groups oracle
+// 修改oracle用户的密码
+passwd oracle
+
+mkdir -p /data/oracle;
+mkdir -p /data/oraInventory;
+mkdir -p /data/database;
+chown -R oracle:oinstall /data/oracle;
+chown -R oracle:oinstall /data/oraInventory;
+chown -R oracle:oinstall /data/database;
+
+// 上面递归改权限，可能后面有些操作有改成root了，可以再后面再执行一次。
+
+// 据说oracle识别不了centos，所以要改为redhat
+vi /etc/redhat-release
+	删除原来的，修改为“redhat-7”
+
+// 查询是否已经安装
+rpm -q  binutils.x86_64 compat-libcap1.x86_64 compat-libstdc++.i686 compat-libstdc++.x86_64 gcc.x86_64 \
+gcc-c++.x86_64 glibc.i686 glibc.x86_64 glibc-devel.i686 glibc-devel.x86_64 ksh libaio.i686 libaio.x86_64 \
+libaio-devel.i686 libaio-devel.x86_64 libgcc.i686 libgcc.x86_64 libstdc++.i686 libstdc++.x86_64 libstdc++-devel.i686 \
+libstdc++-devel.x86_64 libXi.i686 libXi.x86_64 libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
+
+// 没有安装的话，就安装
+yum install -y  binutils.x86_64 compat-libcap1.x86_64 compat-libstdc++.i686 compat-libstdc++.x86_64 gcc.x86_64 \
+gcc-c++.x86_64 glibc.i686 glibc.x86_64 glibc-devel.i686 glibc-devel.x86_64 ksh libaio.i686 libaio.x86_64 \
+libaio-devel.i686 libaio-devel.x86_64 libgcc.i686 libgcc.x86_64 libstdc++.i686 libstdc++.x86_64 libstdc++-devel.i686 \
+libstdc++-devel.x86_64 libXi.i686 libXi.x86_64 libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64
+
+// 装完之后查询，有两个没装，这两个版本和上面的不对，以防万一也装了
+yum install -y compat-libstdc++-33.i686 compat-libstdc++-33.x86_64
+
+// 关闭seLinux
+vi /etc/selinux/config
+	SELINUX=disabled   #此处修改为disabled
+
+vi /etc/sysctl.conf
+	// 无注释版，中文乱码未解决
+	net.ipv4.icmp_echo_ignore_broadcasts = 1
+	net.ipv4.conf.all.rp_filter = 1
+	fs.file-max = 6815744 
+	fs.aio-max-nr = 1048576
+	kernel.shmall = 2097152 
+	kernel.shmmax = 2147483648 
+	kernel.shmmni = 4096 
+	kernel.sem = 250 32000 100 128
+	net.ipv4.ip_local_port_range = 9000 65500 
+	net.core.rmem_default = 262144 
+	net.core.rmem_max= 4194304
+	net.core.wmem_default= 262144
+	net.core.wmem_max= 1048576
+	// 有注释版
+	net.ipv4.icmp_echo_ignore_broadcasts = 1
+	net.ipv4.conf.all.rp_filter = 1
+	fs.file-max = 6815744 #设置最大打开文件数
+	fs.aio-max-nr = 1048576
+	kernel.shmall = 2097152 #共享内存的总量，8G内存设置：2097152*4k/1024/1024
+	kernel.shmmax = 2147483648 #最大共享内存的段大小
+	kernel.shmmni = 4096 #整个系统共享内存端的最大数
+	kernel.sem = 250 32000 100 128
+	net.ipv4.ip_local_port_range = 9000 65500 #可使用的IPv4端口范围
+	net.core.rmem_default = 262144 
+	net.core.rmem_max= 4194304
+	net.core.wmem_default= 262144
+	net.core.wmem_max= 1048576
+
+sysctl -p
+
+vi /etc/security/limits.conf
+	oracle soft nproc 2047
+	oracle hard nproc 16384
+	oracle soft nofile 1024
+	oracle hard nofile 65536
+
+// 不需要？？？
+vi /etc/oraInst.loc	
+	nventory_loc=/data/oraInventory
+	inst_group=oinstall
+// 
+
+chown oracle:oinstall /etc/oraInst.loc
+chmod 664 /etc/oraInst.loc
+
+
+
+vi /home/oracle/.bash_profile
+	
+	// 后面的响应文件db_install.rsp也有一些相同的参数配置，最好一致
+	export ORACLE_BASE=/data/oracle #oracle数据库安装目录
+	export ORACLE_HOME=$ORACLE_BASE/product/12.1.0/dbhome_1 #oracle数据库路径
+	export ORACLE_SID=orcl #oracle启动数据库实例名
+	#export ORACLE_TERM=xterm #xterm窗口模式安装
+	export PATH=$ORACLE_HOME/bin:/usr/sbin:$PATH #添加系统环境变量
+	export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib #添加系统环境变量
+	export LANG=en_US.UTF-8 #防止安装过程出现乱码
+	export NLS_LANG=AMERICAN_AMERICA.ZHS16GBK  #设置Oracle客户端字符集，必须与Oracle安装时设置的字符集保持一致，
+
+
+source /home/oracle/.bash_profile
+
+yum -y install unzip.x86_64
+
+chown -R oracle:oinstall /usr/src/oracle-linuxamd64_12102_database_se2_1of2.zip
+chown -R oracle:oinstall /usr/src/oracle-linuxamd64_12102_database_se2_2of2.zip
+
+su - oracle
+
+unzip /usr/src/oracle-linuxamd64_12102_database_se2_1of2.zip -d /data/database
+unzip /usr/src/oracle-linuxamd64_12102_database_se2_2of2.zip -d /data/database
+
+// rm -rf /data/database/database/response/db_install.rsp
+
+// vi /data/database/database/response/db_install.rsp，把修改后的db_install.rsp内容复制进去。
+
+
+这种是静默安装模式，db_install.rsp是静默安装时响应文件模板
+// 注意不要改自带的模板里面已经有的那几项
+// 报错cant open file for writing，没找到原因，只好一层一层单独创建
+// /data/database/database/response下面的db_install.rsp是模板文件，拉倒本地，用beyong compare和修改后的对比，然后把改好的新的响应文件放到随便一个有权限的目录下
+vi /data/database/etc/db_install.rsp   // 把修改后的db_install.rsp内容复制进去。
+
+// 上面有些如果是root操作的，可能会改了权限，再执行一遍把权限改成oracle用户oinstall组
+chown -R oracle:oinstall /data/oracle;
+chown -R oracle:oinstall /data/oraInventory;
+chown -R oracle:oinstall /data/database;
+
+oracle用户：
+/data/database/database/runInstaller -silent -responseFile /data/database/etc/db_install.rsp
+
+执行结果：
+	// 如果是warning级别的不用管
+	You can find the log of this install session at:
+	 /data/oraInventory/logs/installActions2017-10-14_06-39-27AM.log
+	The installation of Oracle Database 12c was successful.
+	Please check '/data/oraInventory/logs/silentInstall2017-10-14_06-39-27AM.log' for more details.
+	As a root user, execute the following script(s):
+		1. /data/oracle/product/12.1.0.2.0/db_1/root.sh
+	Successfully Setup Software.
+	
+根据执行结果的提示，用root执行/data/oracle/product/12.1.0.2.0/db_1/root.sh
+
+根据实际安装情况，重新设置vi /home/oracle/.bash_profile里面的ORACLE_HOME
+
+sqlplus / as sysdba登陆后，查看一些系统属性：
+	查看alert文件位置
+		select value from v$diag_info where name ='Diag Trace';
+	查看control file信息
+		select * from  v$controlfile;
+		select status, name from  v$controlfile;
+
+sqlplus / as sysdba，显示：Connected to an idle instance。
+	sqlplus下：startup mount，显示could not open parameter file '/data/oracle/product/12.1.0.2.0/db_1/dbs/initorcl.ora'
+	oracle用户身份切换到/data/oracle/product/12.1.0.2.0/db_1/dbs，
+		// cat /data/oracle/product/12.1.0.2.0/db_1/dbs/initorcl.ora
+		cp init.ora initorcl.ora
+		vi initorcl.ora，
+			根据注释中的提示，需要把文件中的ORACLE_BASE改成实际路径。另外db_name要和文件名一致，init + db_name + .ora
+			memory_target也要修改，否则后面会报错
+		切换到ORACLE_BASE目录下，
+			mkdir -p admin/orcl/adump
+			mkdir fast_recovery_area
+	sqlplus下：startup mount，报错：ORA-00845: MEMORY_TARGET not supported on this system。
+		查看initorcl.ora，可以看到MEMORY_TARGET配置为1G。
+		查看系统MEMORY_TARGET：df -h|grep shm。
+		修改其中一个的大小。
+	sqlplus下：startup mount，报错：Parameter db_recovery_file_dest destination string cannot be translated
+		initorcl.ora里面的路径db_recovery_file_dest、 audit_file_dest都必须存在，如果不存在要以oracle用户身份创建
+	sqlplus下：startup mount，报错：	Unable to create audit trail file，Linux-x86_64 Error: 2: No such file or directory
+
+未验证：
+安装ORACLE时，若没有为下列用户重设密码，则其默认密码如下：
+	用户名 / 密码                      登录身份                              说明
+	sys/change_on_install       SYSDBA 或 SYSOPER        不能以 NORMAL 登录，可作为默认的系统管理员
+	system/manager               SYSDBA 或 NORMAL         不能以 SYSOPER 登录，可作为默认的系统管理员
+	sysman/oem_temp             sysman                            为 oms 的用户名
+	scott/tiger                        NORMAL                            普通用户
+	aqadm /aqadm                SYSDBA 或 NORMAL        高级队列管理员
+	Dbsnmp/dbsnmp           SYSDBA 或 NORMAL           复制管理员
+
+======================== 上面的不成功，最后还是先安装gnome，然后图形化界面下面安装成功了 ======
+---------- version1.0 -----------
+---------- 有问题，需要再试一次 -------
+installation：选择install database software only
+有个可选的组，选了oinstall
+有一项交换分区验证未通过，点击忽略
+
+执行过程中会有个提示框，按照提示，打开命令行，切换root用户，执行
+	/data/oraInventory/orainstRoot.sh
+	/data/oracle/product/12.1.0.2.0/db_1/root.sh
+
+// vi /home/oracle/.bash_profile添加下面这个然后source生效
+// source /home/oracle/.bash_profile	
+export DISPLAY=127.0.0.1:1.0
+
+---------- version2.0 -----------
+---------- 成功，windows里sqlplus可以连上 ------------
+一路next，密码ora12g
+netca，发现已经有了
+dbca，创建一个实例，基本上是一路next
+	finish的时候，有个passwd mangement，解锁scott，和sys、 system的密码都设置成ora12g
+sqlplus / as sysdba，显示已经连上一个正在运行的实例了
+
+scott/ora12g@192.168.116.131:1521/orcl
+
+
+
+
+
+
+
+
+
+

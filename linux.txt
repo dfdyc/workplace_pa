@@ -1,0 +1,95 @@
+
+tail   -f   filename         查看文件，实时显示最新数据
+
+less从后往前按关键字搜索日志
+	shift + g，跳到文件最后。
+	? + pattern，可以是正则表达式，往上（后，backward）搜索。/ + pattern是往下搜索。
+	n重复前一个搜索，N（shift + n）反方向重复前一个搜索。
+
+从xshell复制文件到本机：sz file_name，然后会有弹窗选择保存位置。 
+
+-A：后n行。-B：前n行。-C：前后n行。
+cat cnsc.log|grep -C 20 'processKftCheckService'
+
+tar -xzvf file.tar.gz //解压tar.gz
+tar -zcvf WEB-INF.tar.gz WEB-INF   //把WEB-INF归档成tar并压缩成WEB-INF.tar.gz
+date +%Y%m%d%H%M%S     // 当前时间的时间戳
+curdate=`date +%Y%m%d%H%M%S`;echo $curdate;tar -zcvf WEB-INF${curdate}.tar.gz WEB-INF   //压缩时文件名加上时间戳  
+
+ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'
+
+arr=`ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'`;len=${#arr[@]};echo $len;echo ${arr[0]}
+arr=`ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'`;len=${#arr[@]};echo "len="${len};echo "process num="${arr[0]}  
+
+
+
+///////////// begin
+// 删除以前备份，备份当前。
+rm -rf WEB-INF2018*;curdate=`date +%Y%m%d%H%M%S`;echo $curdate;tar -zcvf WEB-INF${curdate}.tar.gz WEB-INF
+// kill进程，并回显进程号，如果有多个，需手动继续kill。
+arr=`ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'`;len=${#arr[@]};echo "len="${len};echo "process num="${arr[0]};kill -9 ${arr[0]}
+
+ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'
+///////////// end
+
+
+
+// 需要在脚本文件中执行
+arr=`ps -ef|grep apache-tomcat-7-sc|awk '!/00:00:0./ {print $2}'`;
+for data in ${arr[@]}
+do
+	echo ${data}
+done
+// end 
+
+
+// begin
+i=0;
+while(( i <= 10 )) 
+#do这儿必须换行，不能和while同一行
+do 
+echo $i
+i=$(($i+1)) 
+echo $i 
+i=$[$i+1]  
+echo $i
+i=`expr $i + 1`
+echo $i
+done
+
+// end
+
+
+if [ ! -d "logs" ]; then echo 'true'; fi;
+
+
+
+
+
+rpm
+	1、列出所有安装的Jenkins
+	rpm -qa | grep jenkins
+	2、软件是否安装；例如：jenkins是否安装
+	rpm -q | grep jenkins
+	3、rpm -ql 列出软件包安装的文件
+	rpm -ql jenkins
+	4、可以直接使用 rpm -qal |grep mysql 查看mysql所有安装包的文件存储位置
+	rpm -qal |grep jenkins #查看jenkins所有安装包的文件存储位置
+	
+iptables（centos6及以前的版本，7及以后的版本改成firewall了）
+	查看开放的端口：	/etc/init.d/iptables status
+	开放3690端口：
+		iptables -A INPUT -p tcp --dport 3690 -j ACCEPT
+		// iptables -I INPUT -p tcp --dport 3690 -j ACCEPT
+	保存：/etc/rc.d/init.d/iptables save
+	重启防火墙：/etc/init.d/iptables restart
+	可以直接修改iptables配置文件里的规则：vi /etc/sysconfig/iptables
+firewall
+	查看防火墙某个端口是否开放：firewall-cmd --query-port=3306/tcp
+	开放防火墙端口3306：firewall-cmd --zone=public --add-port=3306/tcp --permanent
+	查看防火墙状态：systemctl status firewalld
+	重启防火墙：systemctl restart firewalld
+	关闭防火墙：systemctl stop firewalld
+	打开防火墙：systemctl start firewalld
+	开放一段端口：firewall-cmd --zone=public --add-port=40000-45000/tcp --permanent
+

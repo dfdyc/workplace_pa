@@ -1,0 +1,5 @@
+
+
+本机mysql：root：mysql
+
+	

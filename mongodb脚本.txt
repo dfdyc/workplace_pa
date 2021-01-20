@@ -1,0 +1,176 @@
+
+查看版本号
+	db.version();
+	
+http://localhost:28017
+
+增
+post = {
+    "title" : "monggo book",
+    "author" : "yiming",
+    "date" : new Date(),
+	"page" : NumberInt(111),
+	"price" : 222,
+	"innerDoc" : {
+		"name" : "iDocName1",
+		"code" : "iDocCode1"
+	}
+    };
+post2 = {
+    "title" : "java book",
+    "author" : "yiming",
+    "date" : new Date(),
+	"page" : NumberInt(12),
+	"price" : 32,
+	"innerDoc" : {
+		"name" : "iDocName2",
+		"code" : "iDocCode2"
+	}
+    };  
+post3 = {
+    "title" : "python book",
+    "author" : "me",
+    "date" : new Date(),
+	"page" : NumberInt(71),
+	"price" : 63,
+	"innerDoc" : {
+		"name" : "iDocName3",
+		"code" : "iDocCode3"
+	}
+    };
+// 下面俩insert可以改成save，区别：
+// 一、使用save函数时，如果原来的对象不存在，那他们都可以向collection里插入数据，如果已经存在，save会调用update更新里面的记录，而insert则会忽略操作
+// 二、insert可以一次性插入一个列表，而不用遍历，效率高， save则需要遍历列表，一个个插入。
+多个：db.blog.insert([post,post2,post3]);    db.blog.insertMany([post,post2,post3]);
+单个：db.blog.insert(post);   db.blog.insertOne(post);
+db.blog.find();
+db.blog.find({"author":"yiming"});
+
+
+删
+	db.blog.remove({"author" : "me"});
+	db.blog.remove({});
+	db.blog.drop();
+	
+		
+	
+改
+	context
+		db.blog.drop();
+		post = {
+			"title" : "python book",
+			"author" : "me",
+			"date" : new Date(),
+			"page" : 333
+			};
+		db.blog.insert(post);
+		db.blog.findOne({"author":"me"});
+	删除/增加属性
+		方法1
+			var me = db.blog.findOne({"author":"me"});
+			delete me.date;
+			me.date2 = new Date();
+			db.blog.update({"author":"me"}, me);
+		方法2
+			db.blog.update({"author":"me"},{"$unset":{"page":2}});
+	修改/增加属性
+		db.blog.update({"author":"me"},{"$set":{"page":2}});
+		
+
+查
+	context
+		db.blog.drop();
+		post = {
+			"title" : "monggo book",
+			"author" : "yiming",
+			"date" : new Date(),
+			"page" : NumberInt(111),
+			"price" : 222,
+			"innerDoc" : {
+				"name" : "iDocName1",
+				"code" : "iDocCode1"
+			}
+			};
+		post2 = {
+			"title" : "java book",
+			"author" : "yiming",
+			"date" : new Date(),
+			"page" : NumberInt(12),
+			"price" : 32,
+			"innerDoc" : {
+				"name" : "iDocName2",
+				"code" : "iDocCode2"
+			}
+			};  
+		post3 = {
+			"title" : "python book",
+			"author" : "me",
+			"date" : new Date(),
+			"page" : NumberInt(71),
+			"price" : 63,
+			"innerDoc" : {
+				"name" : "iDocName3",
+				"code" : "iDocCode3"
+			}
+			};
+		db.blog.insert([post,post2,post3]);
+	查询所有
+		db.blog.find()/db.blog.find({});
+	查询单个
+		// findOne的返回值是一个文档对象，find()返回一个游标。
+		var me = db.blog.findOne({"author":"me"});
+	指定返回的键
+		// 下面这个会报错：Projection cannot have a mix of inclusion and exclusion
+		db.blog.find({"author":"me"},{title:1,date:1,page:0});
+		// 下面的正确
+		db.blog.find({"author":"me"},{title:1,date:1});
+		db.blog.find({"author":"me"},{title:0,date:0});
+	范围匹配
+		db.blog.find({"page":{"$gte":200,"$lte":300}});
+	不等
+		db.blog.find({"page":{"$ne":222}});
+	in
+		db.blog.find({"page":{"$in":[222,333]}});
+		db.blog.find({"page":{"$nin":[222,333]}});
+	or
+		db.blog.find({"$or":[{"author":"me"},{"page":111}]});
+	查询内嵌文档
+		db.blog.find({"innerDoc.name":"iDocName3"});
+	$where查询
+		db.blog.find({$where : function(){
+		// this是每一个文档对象
+		if(this.author=="yiming"){
+			return true;
+		}else{
+			return false;
+		}
+		}});
+	操作返回的多列游标
+		var cursor = db.blog.find();
+		while(cursor.hasNext()){
+			var doc = cursor.next();
+			print(doc.author);
+		}
+	
+################# old ##############
+// 修改内嵌文档
+post4 = {
+    "title" : "monggo book",
+    "author" : {
+            "name":"embed",
+        "email":"1@qq.com"
+        },
+    "date" : new Date(),
+    "page" : 111
+    };
+db.blog.insert(post4);
+db.blog.update({"author.name":"embed"},{"$set":{"email":"2@163.com"}});
+db.blog.update({"author.name":"embed"},{"$set":{"author.email":"2@163.com"}});
+db.blog.find({"author.name":"embed"});
+
+// $push，$each。
+db.blog.update({"title" : "embed book"},{"$push":{"comments":{"c1":"c1v","c2":"c2v","c3":"c3v"}}});
+db.blog.update({"title" : "embed book"},{"$push":{"comments2":["c1","c2","c3"]}});
+db.blog.update({"title" : "embed book"},{"$push":{"comments3":{"$each":["c1","c2","c3"]}}});
+db.blog.find({"title" : "embed book"});
+

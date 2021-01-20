@@ -1,0 +1,67 @@
+
+
+maven默认配置了自己的中央仓库，不可更改，只要联网，就可以去这个中央仓库下载jar包。
+也可以设置别的仓库作为远程仓库，在<mirror>节点配置。
+/** 这个慎用，未验证。
+maven添加速度更快的阿里云仓库作为远程仓库
+	maven的setting.xml添加节点：
+		<mirrors>
+			<mirror>
+			  <id>alimaven</id>
+			  <name>aliyun maven</name>
+			  <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+			  <mirrorOf>central</mirrorOf>        
+			</mirror>
+		</mirrors>
+	项目的pom.xml添加仓库：
+		<repositories>  
+				<repository>  
+					<id>alimaven</id>  
+					<name>aliyun maven</name>  
+					<url>http://maven.aliyun.com/nexus/content/groups/public/</url>  
+					<releases>  
+						<enabled>true</enabled>  
+					</releases>  
+					<snapshots>  
+						<enabled>false</enabled>  
+					</snapshots>  
+				</repository>  
+		</repositories>
+**/
+
+
+在maven的settings.xml中有私服地址（http://182.92.172.39:9000/nexus/content/groups/public/），
+去掉后面的那些，就能到主页（http://182.92.172.39:9000/nexus），主页有搜索功能，搜artifactId，能找到完整的一段包含groupId、artifactId、version的xml，
+复制到pom中即可引入。
+
+命令
+	mvn compile，编译。
+	mvn package，仅仅打包，不发送到任何仓库。
+	mvn install，打包，然后发送到本地的仓库，不发送到远程。
+	mvn clean deploy -P release，打包，发送到远程私服仓库。
+
+通过网页上传jar
+	最右侧views/repositories，选择repositories，展示出来的列表里面选择3rd party，下面列表有个artifact upload，
+	gav defination选择gav parameter，填写group, artifact, version, packing选择jar。
+	点击select artifact to upload
+	点击add artifact。到这儿就已经准备好一个了，如果有多个可以重复这些步骤，最后点upload artifact，统一上传。
+
+<parent>标签
+	继承parent项目的pom.xml（主要是继承其依赖）。
+dependency的scope
+	
+
+gradle
+	设置环境变量GRADLE_HOME=D:\anzhuang-dev\gradle-2.13-bin。
+	cmd输入gradle -v查看版本号。
+	
+	compile "com.ljs.lib:xfire-jsr181-api:1.0:M1"
+		格式是：group:name:version:classifier，这个用到了最后那个classifier，其它的大部分没用到。
+
+
+gradle设置本地仓库的位置
+	// 两个都做了，有效，不确定具体是哪个生效了
+	// eclipse里面项目引用的位置貌似没有改过来，eclipse的gradle有个单独改GRADLE_USER_HOME的选项，未测试是否能生效
+	设置环境变量GRADLE_USER_HOME
+	gradle目录下新建gradle.properties文件，里面添加一行gradle.user.home=your path
+	

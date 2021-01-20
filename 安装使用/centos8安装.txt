@@ -1,0 +1,15 @@
+
+
+202007
+
+图形化界面左上角，点activities，最左侧出现一排，其中有一个是terminal。
+
+cd  /etc/sysconfig/network-scripts/   ，查看 cat ifcfg-ens33，reboot是yes， 不用管。
+ip addr查看ip地址。
+
+用firewall开放端口。见另一个linux.txt
+
+
+
+
+

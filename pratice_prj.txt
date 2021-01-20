@@ -1,0 +1,80 @@
+
+新建工程practice_all
+	新建dynamic web project，在第二步source folders for build path删除src，下一步选择生成xml文件。项目右键，config to maven project。
+	磁盘上，src下面创建main/java, main/resources, test/java, test/resources文件夹，webContent下面也创建对应文件夹存放js和jsp。
+	项目右键，resource，设置utf8编码。
+	默认是project的名字：项目右键，properties--web project settings，设置web项目的context root。
+	// 不要这样，需要edit太麻烦，直接复制.classpath就行：项目右键build path，source选项卡，删除src，
+	// add folder添加新创建的文件夹test/resources、test/java、main/resource、main/java。点edit，一路next配置。
+	把其它项目的.classpath里面kind="src"的4个复制过来。
+	.project文件删除js相关内容。
+	pom添加依赖：
+		spring
+		jstl
+	// 生成&配置web.xml：项目右键--java ee tools--generate deployment descriptor stub。  // 已经在在新建工程的时候生成
+	配置
+		applicationContext.xml
+		spring-mvc.xml
+		web.xml
+	配置jrebel。help--jrebel--configuration--projects，drl-v1打勾
+	
+datasource/mybatis
+	// 只是连接数据库，用jdbc应该不用datasource。cn项目中datasource是作为mybatis的一个组成部分。
+	pom
+		引入druid的dependency。
+		引入mybatis generator的plugin。
+	applicationContext.xml
+		配datasource的bean
+	src/test/resoource
+		配置mybatis generator的xml文件。
+		
+log4j
+	log4j.properties
+	// 需要配置依赖，这儿不需要可能是有些包已经依赖过了
+	其它不需要任何配置，不需要pom配什么依赖。protected final Logger logger  =  LoggerFactory.getLogger(AopLog. class );就能打日志。
+	// 依赖
+	<dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.12</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.21</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.21</version>
+      <scope>compile</scope>
+    </dependency>
+
+
+/**********************************/
+CREATE TABLE `base_log` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `CODE` varchar(50) DEFAULT NULL COMMENT '代码',
+  `MESSAGE` varchar(1000) DEFAULT NULL COMMENT '信息',
+  `STATE` varchar(10) DEFAULT NULL COMMENT '状态',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `mybatis_base` (
+  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `CODE` varchar(50) DEFAULT NULL COMMENT '代码',
+  `MESSAGE` varchar(1000) DEFAULT NULL COMMENT '信息',
+  `STATE` varchar(10) DEFAULT NULL COMMENT '状态',
+  `UPDATE_TIME` datetime DEFAULT NULL COMMENT '操作时间',
+  `UPDATE_USER` varchar(50) DEFAULT NULL COMMENT '操作人',
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/********************************/
+
+
+

@@ -1,0 +1,307 @@
+
+新特性
+	接口有了默认方法。
+	lamdar表达式。
+		map遍历的新方法：xxx.foreach()。
+
+字符串操作
+	String里面的常用方法。StringBuilder（不是线程安全，所以效率高）与StringBuffer（线程安全，所以效率低）的区别。
+	格式化：String.format()。
+数据类型。
+	互相如何转换。数组与字符串的转换，Arrays.toString()。
+一些关键字
+		作用域修饰符（public protected（子类 同一个包中的其它类 可见） private（只有自己可见），默认是包可见）。
+		final
+			修饰字段：常量。在对象构造完成后值不能被修改。如果是对象，指向的引用不能变，但自身的内部属性可以改变。
+			修饰方法：禁止覆盖（override）。可以被重载，并且重载的方法是不是final都行。
+			修饰类：禁止继承。
+		static
+			修饰字段
+			修饰方法
+			修饰类
+				只能用于修饰内部类，说明这个内部类属于外部类而不属于外部类的对象
+		this & super
+			this完全等同于一个对象的引用，所以可以用this访问对象属性 调用对象方法 调用对象构造器。super仅仅是一个关键字，只能用来调用父类的方法 调用父类的构造器。
+		abstract。初始化块（在对象/实例创建的时候执行）/静态初始化块（在类加载的时候执行）。一些特殊的类（熟悉功能 api）。instance of。
+		Object...（参数数量可变的方法）。
+	Object. Objects. Arrays. Collections. Class. String. Thread. Date. xxxFormat(SimpleDateFormat)
+
+	可见性
+		默认
+		public
+		protected
+		private
+接口/抽象类
+
+流程控制
+	同c类似。if/else. while. do while. for(). switch。 
+	在遍历集合的时候用for each()。
+
+io	
+	scanner
+	流
+		基础是字节流InputStream/OutputStream，为了方便读写文本封装了字符流（Reader/Writer）。
+		有些流是细分成处理特定来源数据，比如文件流FileInputStream，
+		
+		组合流过滤器机制（装饰者模式）：一层套一层，分层完成不同的功能。比如：InputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream("d:/data.txt")))。
+		
+		一些封装好的特定功能：直接用ZipInputStream处理zip文件。
+		
+		如何读写文本/二进制文件？？？
+			PrintWritter，Scanner，
+
+		读写文件：文件流
+		通信：各种socket流
+		Object流：ObjectInputStream
+		
+		操作文件：Paths，Files
+		
+		层级
+			底层直接从数据源读取字节：
+				FileInputStream
+				FileReader
+			不能从数据源读取，而是从其它InputStream读取再包装一层其它功能：
+				BufferedInputStream
+					连续读取一个数据块，放在缓冲区里，所以可以readLine()。
+				BufferedReader
+				DataInputStream
+					将字节包装成指定的数据类型
+				InputStreamReader
+					将字节包装成指定的编码格式的字符
+				ObjectOutputStream
+					将一个对象写出到指定的输出流。
+			能直接读取数据源也能从其它流读取
+				PrintWriter
+					作用：以文本格式写出数据。
+					PrintWriter(String filePath)
+					PrintWriter(File file)
+					PrintWriter(OutputStream os)
+					PrintWriter(Writer writer)
+		
+		nio
+			buffer
+			channel
+				与io的不同
+					channel不分方向，流是单向的。
+					构造方式不同，流都是new出来的，channel和buffer一般是static方法构造的。
+					读写的直接操作对象不同，流是读写成字节/字符，或者对应的字节数组/字符数组，而channel是读写字节buffer/字符buffer。所以nio有机会精细操作读写的数据。
+					nio可以非阻塞？？？
+			selector
+
+重载
+	可见性：无关
+	返回值：无关
+	参数
+
+重写/覆盖/override
+	可见性：不能降低，可以提高。
+	返回值：可以是子类，不能是超类，也不能是其它无关类。
+	参数
+	抛出的异常：可以是子类，不能是超类。	
+
+对象包装器。
+
+枚举类型。
+
+反射。
+
+泛型。
+	
+内部类
+
+
+异常
+	service可以抛出异常，controller要try catch处理所有异常，不能再往外抛了，因为可能影响服务的运行。-- ？？？
+	
+集合
+	LinkedHashMap 是HashMap的一个子类，保存了记录的插入顺序，在用Iterator遍历LinkedHashMap时，先得到的记录肯定是先插入的.
+	也可以在构造时用带参数，按照应用次数排序。在遍历的时候会比HashMap慢，不过有种情况例外，当HashMap容量很大，
+	实际数据较少时，遍历起来可能会比 LinkedHashMap慢，因为LinkedHashMap的遍历速度只和实际数据有关，和容量无关，
+	而HashMap的遍历速度和他的容量有关。
+	
+	collection
+		List
+			ArrayList
+			LinkedList
+			
+		Set
+			HashSet
+			TreeSet
+		
+		Queue
+			BlockingQueue
+				适用于生产者消费者模型。
+				普通的队列，在从空队列取数据或往满队列存数据时，会立即返回（返回false/null，或直接抛异常），而阻塞队列会阻塞，等待可以取/可以存。
+			PriorityQueue
+				数据结构是堆。队头第一个元素总是最小的。需要用Compatator进行比较。
+				适用于任务调度。
+	
+	map
+		HashMap
+		TreeMap
+		LinkedHashMap
+	
+	iterator
+		listIterator
+	
+jvm
+	运行时数据区
+		栈/虚拟机栈
+			线程私有。存放局部变量。
+		本地方法栈
+			普通栈服务对象是虚拟机执行的java方法，本地方法栈服务对象是虚拟机使用到的Native方法。
+		堆
+			线程共享。存放对象实例。
+		方法区（包含运行时常量池）
+			线程共享。存储类信息 常量 静态变量。
+			运行时常量池：存储编译期生成的各种字面量（“字面量”就是“固定值的量”）和符号引用。
+		程序计数器
+			线程私有（每个线程一个独立的计数器）。
+	
+	程序执行时虚拟机的操作
+		对象创建
+			对象的引用在栈里面，对象在堆里面。
+		调用方法
+		再细一点的操作，比如金蝶面试问的哪个“int i = 0”虚拟机如何执行，循环等语句如何执行。
+	
+	垃圾回收
+	
+	class文件结构
+		常量池
+	
+	类加载机制
+		启动类加载器（Bootstrap ClassLoader）
+		扩展类加载器（Extension ClassLoader）
+		应用程序类加载器（Application ClassLoader）
+	动态绑定/静态绑定
+
+URLConnection		
+	ConfirmTranServiceImpl-->downloadCont()，使用URLConnection下载pdf。
+	与httpClient的关系
+		URLConnection是java内置的，httpClient是在其基础上封装的第三方类库。
+		URLConnection有一个子类HttpURLConnection，可以用来进行http连接。
+		在cn项目中，由于是下载pdf，不是http+json，所以直接用URLConnection+流。
+		-- 实际上URLConnection只能使用流，没有封装成其它数据格式。
+
+项目代码
+	SqlDynamicColumnsWrap
+
+源码/类库
+	org.apache.commons.lang3.math.NumberUtils.isNumber()：判断是否是数字。
+
+java 8
+	正则表达式
+		org.springframework.core.OrderComparator
+	接口
+		默认方法
+		静态方法
+	函数式编程
+		java.util.function.*
+	方法引用
+	stream
+
+jdk源码
+	java.util
+		
+		辅助类
+			Collections
+			Arrays
+			Objects
+			
+			Iterator
+				ListIterator
+			Compatator
+		接口和抽象类
+			Collection
+				AbstractCollection
+					AbstractList
+						AbstractSequentialList
+					AbstractSet
+					AbstractQueue
+			Map
+				AbstractMap
+		具体数据结构
+			ArrayList
+				普通数组实现的list
+				优势：随机访问，
+				劣势：在中间添加删除，因为需要移动后面所有的元素。
+				普通：顺序遍历、在末尾添加删除。
+				实现
+					list的方法
+					collection的方法
+						集合操作
+						长度、包含元素、判空、清空 等操作。
+					jdk8的方法
+						函数式编程接口
+							public void forEach(Consumer<? super E> action)
+							public boolean removeIf(Predicate<? super E> filter)
+							public void replaceAll(UnaryOperator<E> operator)
+						多核接口
+							public Spliterator<E> spliterator()
+			LinkedList
+				普通双向链表实现的List
+					静态内部类Node是节点实现，保存有前后指针。
+				优势：在中间添加删除，只需要修改指针，
+				劣势：随机访问，因为每一次都要从头或者从尾遍历。
+				普通：顺序遍历、在末尾添加删除。
+				实现
+					比ArrayList多了
+						peek(), element(), poll(), offer(), push(), pop()
+					少了函数式编程接口
+			HashSet
+				把HashMap通过适配器模式转换成Set接口
+			TreeSet
+			BitSet
+			EnumSet
+			LinkedHashSet
+			HashMap
+				原理
+					用数组transient Node<K,V>[] table实现散列（根据hash算出数组下标），每个数组元素是一个static class Node<K,V> implements Map.Entry<K,V>，由这个node构成单向链表，
+					用来存放hash相同的所有元素。如果冲突太多链表太长，用TreeNode改成树状实现而非链表。
+					数组下标是通过 first = tab[(n - 1) & hash] ，即数组长度减1然后和元素的hashcode进行 & 运算得出？？？
+					final Node<K,V> getNode(int hash, Object key)
+						先根据hash算出在table数组中的位置，在从数组元素（链表的第一个节点）开始遍历链表，找出key相同的哪一个
+				
+			TreeMap
+				红黑树。
+			EnumMap
+			LinkedHashMap
+				HashMap的数组的元素是Node<K,V> implements Map.Entry<K,V>，仅保留了一个指针指向hash冲突的链表的下一个元素，而LinkedHashMap的数组元素
+				是static class Entry<K,V> extends HashMap.Node<K,V>，增加了两个指针 Entry<K,V> before, after ，分别指向某些操作（？？？）的前后元素，从而实现一个双向链表，实现按顺序遍历。
+			WeakHashMap
+			ArrayDeque
+			PriorityQueue
+			
+			Stack
+				已经被Dequeue取代
+			Hashtable
+			Vector
+			
+					
+					
+			
+			AbstractMap/AbstractSet/AbstractList
+			arrayList
+			BitSet
+			linkedList
+			NavigableMap/NavigableSet
+			SortedMap/SortedSet
+			
+	java.util.function
+		Consumer
+		Predicate
+
+
+	io
+		字节流，字符流
+		目的地：文件，网络（socket），内存（ObjectInputStream）
+		组合流
+			先由字节流直接操作字节，然后再包装缓存、Data等其它内容
+			
+		文本读写一般用Scanner、PrintWriter
+
+
+
+
+
+

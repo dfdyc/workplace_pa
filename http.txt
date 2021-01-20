@@ -1,0 +1,34 @@
+实现方式：
+		1.org.apache.http.client
+		// http://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/
+		2.JDK自带的URLConnection
+				项目的DownLoadPdf使用了URLConnection。不同于httpClient，这个url是阿里云存储的pdf的地址，应该是资源的位置路径，就是
+				放到html的<image src="">里面能直接显示文件的那种，所以用URLConnection获取流后，完全就是一个pdf，没有多余的东西。
+		3.com.mashape.unirest.http.Unirest
+			富友实现
+			HttpResponse<String> resp = Unirest.post(url).fields(dataMap).header("accept", "application/json");
+			对于http而言需要设置的参数包括：url，get/post，header，parameters。这些参数上一行都有设置。
+		
+HttpClient用法
+		1.http://blog.csdn.net/mr_tank_/article/details/17454315
+		创建HttpClient
+				HttpClientBuilder
+				CloseableHttpClient
+		创建HttpGet
+				HttpGet
+		执行get请求
+		获取响应消息实体
+				HttpResponse
+				HttpEntity
+		1.http://blog.csdn.net/mr_tank_/article/details/17454315
+
+项目
+		1.确认交易时，对合同进行盖章，使用了http post。
+		LnAppController10.java-->confirmTranService.confirmTranTW(Long.parseLong(id), resDesc);
+		
+		2.BusServiceImpl，line-600，
+		com.cn.common.util.HttpUtils，通用http方法。
+
+发送请求时使用的属性
+	Content-Type：知道发送的内容的类型。
+	accept：希望接收的响应的类型。

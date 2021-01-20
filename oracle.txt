@@ -1,0 +1,169 @@
+
+select * from user_tables;
+select * from user_tab_comments;
+select * from user_col_comments
+
+select * from v$version;
+SELECT * FROM v$nls_parameters;
+
+查看表及其注释
+select t1.table_name,t2.comments from user_tables t1
+left join user_tab_comments t2 on t1.table_name=t2.table_name;
+
+使用正则表达式 
+	和mysql的regexp关键字不一样，如果是'^trans$|^mch_info$'进行的就是模糊匹配，必须加上^表示以此开头，$表示以此结尾，才和mysql的regexp效果一样。
+	select * from user_tab_comments 
+	where regexp_like(lower(table_name),'^trans$|^mch_info$');
+	
+	另外几个正则表达式函数，分别是substr、instr、replace的正则表达式版：
+		regexp_substr
+		regexp_instr 
+		regexp_replace
+
+查看建表语句
+	右击表名，view或者edit，在出现的界面的右下角再选择view sql即可
+	
+把某行记录导出成insert
+	记录最左侧右键，点击"Export results"，选择sql file
+	
+分页
+	select * from(
+	select t.*,rownum rn from (
+	select t3.username user_name, t2.value use_scenes_str, t.plus_coupon_per, 
+	case when t.coupon_period_unit ='0' then t.plus_coupon_period || '个月' else t.plus_coupon_period || '天' end 
+	plus_coupon_period_str, t.plus_coupon_period, t.coupon_period_unit, t.invest_date, t1.start_date, t1.end_date, to_char(t.invest_date,'yyyy-MM-dd') invest_date_str, 
+	to_char(t1.start_date,'yyyy-MM-dd') start_date_str, to_char(t1.end_date,'yyyy-MM-dd') end_date_str, t1.give_time, to_char(t1.give_time,'yyyy-MM-dd') give_time_str, 
+	t.invest_amt, t.invest_name, t.sum_plus_income, t1.give_plus_income, t.to_give_income, t1.plus_income, t1.send_status, 
+	decode(t1.send_status,'0','未发放','1','已发放') send_status_sts 
+	from t_user_coupon_income t 
+	left join t_user_coupon_income_detail t1 on t.id = t1.income_id 
+	left join sys_apr t2 on t.use_scenes = t2.key and t2.name = 'USE_SCENES' 
+	left join t_user t3 on t.user_id = t3.id 
+	where 1=1 and invest_prod_type in('SBZQ') 
+	and to_char(invest_date,'yyyy-MM-dd') >=? 
+	and to_char(invest_date,'yyyy-MM-dd') <=? 
+	and to_char(give_time,'yyyy-MM-dd') >=? 
+	and to_char(give_time,'yyyy-MM-dd') <= ? 
+	order by t.id desc,start_date_str asc ) t) 
+	where rn >(?-1)*? and rn <= ?*? 
+	Parameters: 2017-01-01(String), 2017-10-18(String), 2017-01-01(String), 2017-10-18(String), 1(String), 20(String), 1(String), 20(String)
+
+sf
+	mapper里面一个sql块执行多条语句，可以用begin     ;end;结构，如下：
+		<update id="batchUpdate"  parameterType="java.util.List">    
+		   begin            
+			  <foreach collection="list" item="item" index="index" separator=";">     
+				  update tid_info a
+				  <set>             
+					 a.term_req = #{item.termReq}         
+				  </set>
+				  where 
+					  (a.term_req != #{item.termReq} or a.term_req is null) 
+					  and a.appl_id = #{item.applId} and a.tid = #{item.tid} and a.mid = #{item.mid} 
+				</foreach>   
+			 ;end;
+		</update>
+
+函数
+	字符串函数
+	
+	分析函数
+	
+	分组统计
+		rollup
+			相当于多个group by进行union all
+			例：
+				select group_id,job,sum(salary) from group_test group by rollup(group_id, job);
+				相当于：
+				select group_id,job,sum(salary) from group_test group by group_id, job
+				union all
+				select group_id,null,sum(salary) from group_test group by group_id
+				union all
+				select null,null,sum(salary) from group_test
+				order by 1,2;
+		cube
+			rollup(a,b)   统计列包含：(a,b)、(a)、()
+			rollup(a,b,c) 统计列包含：(a,b,c)、(a,b)、(a)、()
+			……以此类推ing……
+
+			cube(a,b)     统计列包含：(a,b)、(a)、(b)、()
+			cube(a,b,c)   统计列包含：(a,b,c)、(a,b)、(a,c)、(b,c)、(a)、(b)、(c)、()
+			
+		grouping sets
+			grouping sets(a,b)
+				先group by a，再group by b，再union all。
+			grouping sets((a,b),c)
+				先group by a,b，再group by c，再union all。
+		grouping()、grouping_id()、group_id()
+		
+	
+索引
+	b-tree（默认）
+	hash索引
+		根据hash的原理，适用于=、!=，而不适用于范围查询。
+	位图索引
+		适用于选择性低的列，比如100w条数据但取值只有y/n。
+	函数索引
+		
+
+关键字
+	insert all/insert first
+		多表插入。
+	merge
+
+存储过程
+	
+游标
+
+定时调用存储过程
+	创建一个定时任务，指定了要执行的存储过程名字和定时的周期。submit后会有一个任务号。
+		Declare 
+		  i Integer; 
+		Begin 
+			-- 第二个参数是存储过程的名字，第三、四个参数是执行的时机
+		   dbms_job.submit(i,'p_test;',Sysdate,'sysdate+1/24'); 
+		end;
+		
+	运行指定的定时任务
+		Declare 
+		  jobno Integer; 
+		Begin 
+		-- 查找需要运行的那个任务号 
+		Select t.JOB into jobno From User_Jobs t ; 
+		-- 运行指定的执行计划 
+		dbms_job.run(jobno); 
+		end; 
+		
+	查看任务队列的情况
+		select job,next_date,next_sec,failures,broken from user_jobs; 
+		
+	停止某个任务
+		Declare 
+		  jobno Integer; 
+		Begin 
+		  -- 查找任务号 
+		  Select t.JOB into jobno From User_Jobs t ; 
+		  -- 停止任务，不再继续执行 
+		  -- dbms_job.broken(jobno,True); 
+		  -- 停止任务，并在两分钟后继续执行 
+		  dbms_job.broken(jobno,True,Sysdate+(2/24/60)); 
+		end;
+		
+	删除某个任务
+		Declare 
+		  jobno Integer; 
+		Begin 
+		  -- 查找计划号 
+		  Select t.JOB into jobno From User_Jobs t ; 
+		  dbms_job.remove(jobno); 
+		end; 
+		
+	修改任务
+		Declare 
+		  jobno Integer; 
+		Begin 
+		  -- 查找计划号 
+		  Select t.JOB into jobno From User_Jobs t ; 
+		  -- 修改为：每分钟执行一次 
+		  dbms_job.interval(jobno, 'sysdate+1/(24*60)'); 
+		end; 

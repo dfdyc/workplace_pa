@@ -1,0 +1,287 @@
+
+
+eclipse
+	如果窗口位置乱了，window--perspective--reset perspective，就可以把所有窗口重置到默认的位置。	
+
+	删除时，c盘用户目录下有个.p2、.eclipse（尤其是这个，保留了之前的一些配置，必须删了）文件夹也属于eclipse
+
+	市场搜svn，安装install最多的那个subversive但是下载报错，装了subclipse
+	
+	windwos--preference--maven，user-settings、global-settings都设置为E:\tools\apache-maven-3.3.3-bin\conf\settings.xml
+	
+	windwos--showview，添加svn
+	
+	windwos--showview，选择others，在搜索框搜problem。如果项目有红叉，错误信息就会显示在这里面。
+	
+	windwos--preference--generals--editors--text editors--background color，设置绿色
+		参数：
+			色调：91，红：114
+			饱和度：64，绿173
+			亮度：180，蓝130
+		或者rgb：169,205,179
+	
+	windwos--preference--generals--appearance--colors and fonts--basic--text font，
+	
+	windwos--preference--generals--workplace，设置utf-8
+	
+	windwos--preference--validation，把xml开头的两个取消掉
+	
+	windwos--preference--java--installed jres，设置jre路径（改成jdk路径）
+	
+	下方控制台，选server，右键new，设置timeout。
+	
+	设置jdk源码
+	1.点 “window”-> "Preferences" -> "Java" -> "Installed JRES"
+	2.此时"Installed JRES"右边是列表窗格，列出了系统中的 JRE 环境，选择你的JRE，然后点边上的 "Edit..."， 会出现一个窗口(Edit JRE)
+	3.选中rt.jar文件的这一项：“c:\program files\java\jre_1.5.0_06\lib\rt.jar” 
+	点 左边的“+” 号展开它，
+	4.展开后，可以看到“Source Attachment:(none)”，点这一项，点右边的按钮“Source Attachment...”, 选择你的JDK目录下的 “src.zip”文件
+	5.一路点"ok",结束。
+	
+	console右上角设置固定、啥时候弹出。
+
+	安装插件
+		热部署
+			有两种，tomcat的插件是jrebel，需要激活（可以用网址激活）。另一个支持热部署的服务器是jetty。
+
+	eclipse安装插件properties editor, 
+	findbugs离线安装
+		解压findbugs.plugin.eclipse_3.0.0.20140629-84d758f.zip，解压后的目录整个放到eclipse安装目录（不是工作空间目录）的plugins下重启即可。
+
+	ctrl + d：删除
+	ctrl + l：跳到指定的行号
+	ctrl + 2：给当前代码补全返回值及返回值的声明。
+	ctrl + e：从已打开的文件中选择一个文件。
+	ctrl + q：回到最后一次编辑的位置。
+	ctrl + w：关闭当前打开的文件。-- 关闭所有/其他所有：在标签页上右键，close all或者close others。
+	ctrl + o：打开Outline
+	ctrl + h：搜索关键字
+	ctrl + alt + 向下箭头：复制整行到下一行
+	ctrl + shift + t：搜索类（没法搜Java类之外的资源），能搜索所有依赖包里面的。
+	ctrl + shift + r：搜索资源，只能搜workplace里面的，不能搜依赖包里面的。
+	ctrl + shift + o：整理Import。
+	ctrl + shift + f：格式化代码。
+	ctrl + shift + c：注释/取消注释，可用于多行，风格是单行注释的风格。
+	ctrl + shift + h：查找调用选定的方法名的所有地方。相当于右键open call hierarchy。
+	ctrl + shift + /：注释代码块。
+	ctrl + shift + \：取消注释代码块。
+	shift + enter：当前行下方插入一个空行，并且光标移动到那个空行。
+	alt + /：智能补全。
+	alt + 左右箭头：打开之前打开的文件，左相当于后退，右相当于前进。
+	alt + 上下箭头：当前选中的代码块/当前行 整体与上下相邻代码行进行换位。
+	整体修改变量名/方法名/类名：右键rename，就能全局修改。
+
+	java working set
+	新建
+		new--java--java working set
+	导航栏按working set显示
+		导航栏右上角小三角符号（view menu）-- top level elements -- working set
+	
+	导入已存在项目到working set
+		导入时可以选择
+	svn检出到working set
+		没法选。
+	已有项目加入working set
+		导航栏右上角小三角符号（view menu）-- select working set -- edit 
+
+
+idea
+	激活（2020.1.3）
+		先安装原版，会先弹出一个注册框，勾选 Evaluate for free, 点击 Evaluate。
+		把破解补丁 jetbrains-agent.jar拖入 IDEA 界面中，弹出需要重启的提示框，点击 restart 重启 idea。
+		配置助手会提示您，需要使用哪种激活方式，这里我们选择默认的“ Activation Code”，通过注册码来激活，点击“为IDEA安装”。
+		激活成功。进入 IDEA 界面后，点击 Help -> Register 查看激活状态。
+
+	报错：请使用 source 7 或更高版本
+	解决：file--project structure--project--project language level，修改为7.
+
+	报错：点击debug按钮启动的时候报错：Unable to open debugger port : java.net.SocketException "socket closed"
+	解决：选的是clean而不是一个web项目，选一个web项目就行
+
+	PermGen space，tomcat配置的VM options，设置参数-Xms128m -Xmx1024m -XX:MaxPermSize=512m
+
+	存管版，business-api需要引入工程deposit-entity
+		
+	查看类的结构
+		alt + 7，调出view--tool windows里面的struture窗口。
+
+	导入gradle工程
+		// 不能直接导入工程，会有一些错误（比如原来的jdk1.6不会变成jdk1.7，通过build.gradle文件会改正这些东西）
+		open一个工程，选择大目录，选择build.gradle文件。
+		
+	设置
+		git.exe
+			在git安装目录里面搜git.exe的位置，设置即可。
+		utf8
+			file--other settings--default settings--editor--file encodings
+		显示行号
+			File->Settings->Editor->General->Appearance->show line numbers
+		设置字体大小
+			File->Settings->Editor->colors%fonts-->font-->点击save as，填个名字，保存，然后设置参数。
+	maven
+		file--settings，搜maven，按eclipse里面设置的路径进行设置。
+		
+	添加tocmcat
+		最上面的run--edit configuration，左上角有个绿色的加号，选择tomcat server，local，
+		在deployment选项卡添加module，一般选war exploded（能支持热部署），注意和war的区别。旁边有一个设置项目路径的选项application context，默认是空。
+		热部署：然后在server中 将 "On Update action"、"On frame deactivation" 都选择 update classes and resources
+		
+	编译
+		build里面，选make project，或者整体build
+
+	打开一些控制台
+		view--tool windows,
+		tomcat的output的控制台：选择view--tool windows里面的run，如果是debug模式启动tomcat，是打开debug。
+		还有一个叫message，在启动tomcat前会make project一下，相关信息会出现在这个控制台，build产生的信息也会在这儿。
+		
+	查看依赖
+		file--project structure, 在modules里面选择具体的模块，右侧选择dependencies。
+
+	快捷键	
+		全局搜索：ctrl + shift + f。如果快捷键冲突，位置在：edit--find--find in path
+		搜索类：ctrl + n ，include non-project classes打钩，就能搜到依赖中的类，搜到后在最右边就是属于哪个jar。
+		搜索文件：ctrl + shift + n 
+		跳转到方法的实现类：ctrl + alt + b 
+		
+	调试
+		代码左边点击一下，就设置了一个断点。右上方普通方式启动tomcat的按钮旁边有个小虫子，就是debug模式启动。
+		f7下一步会进入方法，f8下一步不进入方法，f9恢复程序，alt + f8，查看选中的变量值。
+	
+navicat
+	
+notepad++
+	打开文件夹工作区：视图-->文件夹工作区，空白处右键，add。
+	// 打开工程面板：视图-->工程-->打开工程面板。-- 暂时还不知道有啥用。
+	左键点击左边行号位置，会有一个蓝点，是书签。在任意位置按F2，就会跳到那个蓝点的位置。
+	设置背景色：设置-->语言格式设置。
+
+	ctrl + l：删除当前行。
+	ctrl + f：搜索或者替换，可以支持正则表达式。
+	ctrl + q：注释/取消注释。
+	ctrl + d：复制并粘贴当前行。
+	ctrl + tab：切换标签页
+	alt + shift：列编辑。
+	
+
+
+
+plsqldeveloper
+
+
+pycharm
+	File》Setting》Editor》Code Style》File and Code Templates》Python Script ，添加一行：# -*- coding: utf-8 -*- 
+	格式化代码：ctrl + alt + l，会与qq的锁定快捷键冲突。
+	ctrl + shift + a，能通过名字搜索要找的选项。
+	发生更改但是没有commit的文件会显示蓝色，没有被add进git的文件会显示为红色
+	
+	设置背景色
+		File》Setting》Editor》color scheme》general，右侧选择框里面，展开text，选择default text，勾选background，点数值框进行选择：169,205,179
+	设置字体
+		file--settings，搜索框输入font
+	使用git
+		把非git项目变成git
+			最上方vcs，选择enable version control integration，选择git。
+		导入github项目
+			最上方vcs，选择checkout from version control，选择github，
+	设置utf8编码
+		file--settings，搜索框输入encoding
+		file--default settings，搜索框输入encoding
+	关闭一些警告信息
+		File - Settings…… - Editor - Inspections
+		在python下找到 PEP8 coding style violation，在右边下面的Ignore errors里可以添加忽略的警告信息ID，如下：
+		indentation contains tabs 对应的id是W191
+		警告信息对应的ID在http://pep8.readthedocs.io/en/latest/intro.html#configuration中可找到。
+	修改项目的python interpreter
+		file-->settings-->project: xxx-->project interpreter
+	设置全局默认的python interpreter
+		file-->default settings-->project interpreter。
+
+	Ctrl + D 复制选定的区域或行
+	Ctrl + Y 删除选定的行
+
+
+vs code
+	设置git path
+		文件--首选项--设置，搜索git.path，在右侧用户设置添加json属性："git.path": "D:\\software-dev\\Git-windows-64\\cmd\\git.exe"，重启。
+	使用git
+		左侧有个剪刀模样的图标“源代码管理GIT”，点进去，看到改动的文件，
+	设置颜色主题
+		文件--首选项--颜色主题，选Quiet Light比较好。
+	设置语言
+		ctrl + shift + p，顶部会出现一个搜索框，搜“configure language”，json格式的"locale"配置，中文："zh-cn"，英文："en-us"。重启。
+	设置背景色
+		可以在用户设置里使用下面的覆盖原配置，不过具体有哪些属性还不确定。
+		"workbench.colorCustomizations": {
+			"editor.background": "#A9CDB0"
+
+		}
+		activityBar.background	活动栏背景色
+		activityBar.foreground	活动栏前景色(例如用于图标)
+		editor.background	编辑器背景颜色
+		editor.foreground	编辑器默认前景色
+		editor.findMatchBackground	当前搜索匹配项的颜色
+		editor.findMatchHighlightBackground	其他搜索匹配项的颜色
+		editor.lineHighlightBackground	光标所在行高亮文本的背景颜色
+		editor.selectionBackground	编辑器所选内容的颜色
+		editor.selectionHighlightBackground	与所选内容具有相同内容的区域颜色
+		editor.rangeHighlightBackground	突出显示范围的背景颜色，例如 "Quick Open" 和“查找”功能
+		editorBracketMatch.background	匹配括号的背景色
+		editorCursor.foreground	编辑器光标颜色
+		editorGutter.background	编辑器导航线的背景色，导航线包括边缘符号和行号
+		editorLineNumber.foreground	编辑器行号颜色
+		sideBar.background	侧边栏背景色
+		sideBar.foreground	侧边栏前景色
+		sideBarSectionHeader.background	侧边栏节标题的背景颜色
+		statusBar.background	标准状态栏背景色
+		statusBar.noFolderBackground	没有打开文件夹时状态栏的背景色
+		statusBar.debuggingBackground	调试程序时状态栏的背景色
+		tab.activeBackground	活动选项卡的背景色
+		tab.activeForeground	活动组中活动选项卡的前景色
+		tab.inactiveBackground	非活动选项卡的背景色
+		tab.inactiveForeground	活动组中非活动选项卡的前景色
+	打开两个vscode
+		file--> new window。
+	提交git
+		最左侧的图标有一个像剪刀的（名字叫source control），如果有git文件变动图标上会有数字。点进去，上方有几个图标，可以进行git操作。
+		
+	快捷键
+		文件--首选项--键盘快捷方式 
+		列编辑：Alt+Shift+鼠标左键
+		复制当前行：在当前行任意地方ctrl + c即可。
+		ctrl + tab：在上一个打开的文件和当前文件之间切换。
+		ctrl + d: 选择与当前选中的文本内容相同的下一个文本。
+		
+	调c语言程序
+		下载扩展插件。一般情况下打开一个.c结尾的文件，会自动提示下载。
+		安装minggw-w64. 配置环境变量里面的path，bin目录下面（有gcc.exe等程序的那个目录）。cmd里面输入gcc -v可以验证是否配好。
+		两种运行方式：
+			1.f5是debug。需要配置launch.json，c_cpp_properties.json, tasks.json三个文件。这些配置在c文件所在的目录下面的.vscode隐藏目录里面。
+			2.最上方terminal调出控制台，同cmd一样，输入gcc命令进行编译、运行（没法debug）。
+		
+		配置文件见目录“vc code配置文件”。
+	c#
+		https://docs.microsoft.com/zh-cn/dotnet/core/tutorials/with-visual-studio-code
+		安装 .net core sdk。不需要 .net core runtiom   .net framework xxx。
+		打开vs code，安装c#插件。
+		vs code里面，file--open folder，新建一个项目文件夹。
+		vs code里面，ctrl+反引号（数字1左边那个）打开内置的控制台。
+		dotnet new console 初始化，这时会在项目目录里面生成一些必要文件，包括一个代码文件Program.cs，里面是hello world的代码。
+		右下角如果弹出需要安装资产（asset），点yes。
+		dotnet run，就会运行Program.cs文件，默认是输出hello world。自己可以修改这个代码文件。
+		
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			

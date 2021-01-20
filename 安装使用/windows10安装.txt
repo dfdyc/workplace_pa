@@ -1,0 +1,48 @@
+
+桌面显示“此电脑”：个性化-->主题-->桌面图标设置；
+删除windows.old：c盘右键-->磁盘清理-->系统文件清理-->勾选“以前的windows安装”；
+
+解决高分辨率（高DPI）显示模糊问题
+	以Adobe acrobat为例：切换到程序安装的目录下，找到Acrobat.exe，右键--属性--兼容性--更改高DPI设置，
+	里面的“高DPI缩放替代”选项，“替代高DPI缩放行为”打钩（选中），“缩放执行”选择默认的“应用程序”即可。
+
+
+解决外接显示器分辨率问题
+	如果笔记本分辨率大于外接显示器分辨率
+		必须先接好线，设置好“不复制这些显示器，仅使用外接显示器”，这样从开机就仅使用外接显示器显示，就不会出现桌面模糊（最明显的现象，
+		就是右下角搜狗那个长条不成比例，很模糊）的问题，
+		如果一开始用的是笔记本显示器，使用过程中接了外接显示器，就会出现桌面模糊&应用（不是所有应用，是一部分）模糊的情况。
+
+	1.bios的configuration中，显卡选项选择自动转换。
+	2.设备管理器右键，更新amd独显的驱动。注意集成显卡的驱动有时候会无法使用，此时这里是一个黄色三角感叹号，要重新下载安装，否则启动电脑会异常。
+	3.显示设置里面，不要选择“复制这些显示器”，而是选择“仅使用2”，这样就能选择外接显示器的分辨率了。
+
+设置windows背景色
+	1.根据路径找到:HKEY_CURRENT_USER->Control Panel->Colors ，找到“window”
+	原值：255 255 255    修改为：199 237 204
+	2.HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\DefaultColors\Standard
+	原值：16777215/ffffff，修改为：caeace
+
+
+显示桌面的时候鼠标不停转圈：
+	控制面板--设备--鼠标--其它鼠标选项--指针--自定义，后台运行这个图标换成正常不会闪的即可。
+
+java环境安装
+	jdk
+		点击安装。配置环境变量。cmd窗口输入：java -version，能识别命令即为安装成功。
+	eclipse
+		解压即可。
+		preference的validation，取消xml、html校验，要不update的时候太慢了。
+	maven
+		解压即可。
+		将仓库放到maven目录下面。
+		修改eclipse中maven的globle settings和user settings都为maven的config的settings.xml。
+		maven的config的settings.xml中设置maven仓库地址：<localRepository>D:/anzhuang-dev/apache-maven-3.3.3-bin-2/repository</localRepository>
+	tomcat
+		解压即可。
+		
+vmware
+		
+mysql
+
+oracle

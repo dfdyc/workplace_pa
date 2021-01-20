@@ -1,0 +1,81 @@
+
+centos安装mysql，大部分是用yum，很少是用非yum
+
+==========非yum，安装失败。
+创建mysql用户
+	useradd mysql
+	passwd mysql，密码为：mdb2017
+	
+使用mysql用户，上传mysql-5.7.17-linux-glibc2.5-x86_64.tar到home/mysqlFiles。
+
+解包：tar -xf mysql-5.7.17-linux-glibc2.5-x86_64.tar
+解压&解包：tar -xzf mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz
+
+mkdir mysqlFiles/data
+
+groups mysql，可以看到创建用户mysql时自动创建了他所属的组mysql。
+
+到/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/bin  目录下，执行命令
+	./mysqld --user=mysql --basedir=/home/mysql --datadir=/home/mysql/data --initialize
+
+根据提示信息，A temporary password is generated for root@localhost: pAupouht_6l_
+
+cd /home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/support-files
+vi mysql.server，修改下面一段的路径：
+	mysqld_pid_file_path=
+	if test -z "$basedir"
+	then
+	  basedir=/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64
+	  bindir=/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/bin
+	  if test -z "$datadir"
+	  then
+		datadir=/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/data
+	  fi
+	  sbindir=/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/bin
+	  libexecdir=/home/mysql/mysqlFiles/mysql-5.7.17-linux-glibc2.5-x86_64/bin
+	else
+	  bindir="$basedir/bin"
+	  if test -z "$datadir"
+	  then
+		datadir="$basedir/data"
+	  fi
+	  sbindir="$basedir/sbin"
+	  libexecdir="$basedir/libexec"
+	fi
+
+	
+===================yum安装
+1.查看是否安装有mysql
+	rpm -qa查询所有的已安装包
+	rpm -qa|grep mysql查询mysql相关的已安装包
+	
+2.查看yum库是否有mysql相关文件（在从官网下载.rpm格式的yum库包并安装之前，是查不到的）
+	yum list|grep mysql
+
+3.使用rpm把mysql文件安装到yum库
+	官网下载rpm包，然后rpm -ivh 文件名。（需要使用root用户，否则没有相关目录的权限）
+	
+4.root用户：使用yum list|grep mysql找到yum库中的mysql文件
+	yum list|grep mysql
+	
+5，root用户（只有root有yum install权限？），yum install mysql-community-server
+
+6.service mysqld start
+
+-- 7. 修改/etc/my.cnf文件，加入 skip-grant-tables；
+
+7.从日志中查找安装时生成的随机密码：less /var/log/mysqld.log |grep 'A temporary password is generated for root@localhost'
+
+8.mysql -uroot -pXXX 登录。
+
+9.set global validate_password_policy=0;   注意必须是有密码登录的那种，否则会找不到变量。	
+	set global validate_password_length=4;  -- 设置为最短4位
+	SET PASSWORD = PASSWORD('mysql');
+	
+10. 退出mysql，执行命令：/sbin/iptables -I INPUT -p tcp --dport 3306 -j ACCEPT，开放3306端口。
+
+搞定。
+
+
+
+

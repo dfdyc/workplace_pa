@@ -1,0 +1,277 @@
+
+
+redis的主要应用
+	mybatis的二级缓存
+	存储一些临时数据
+		// 这些数据都是临时的，存在时间短。没有必要专门存数据库。存redis性能好一点。
+		防止表单提交的token
+		手机验证码
+	存储一些需要特殊数据结构存储的数据
+		待审核工单需要用队列模型存储（多个生产者往队列存，多个消费者中的一个取出后处理）。redis提供了这种数据结构。比关系型数据库方便。
+	分布式锁
+	redisson提供的其它一些功能。
+
+cnweb_sa
+	redis与mybatis整合
+	
+	相关配置
+
+cnweb_sa使用jedis操作redis（mybatis与redis整合）
+	redis.properties中配置redis属性值。
+	springContext.xml
+		jedisPoolConfig，
+		JedisConnectionFactory，
+		RedisTemplate，
+	RedisCache，根据redis部署的ip、port，构造Jedis，用Jedis的set()、get()、expire()存取key-value。
+	JedisPoolHolder，从spring中取bean：redisTemplate。
+	MybatisRedisCache，作为mybatis的二级缓存
+		如何使用：
+			在需要加缓存的*Mapper.xml文件中使用<cache/>标签，其中type属性指定了这个类（实现了mybatis的cache接口）。
+			mybatis-config.xml，<setting name="cacheEnabled" value="true"/>开启缓存。
+	
+	KftRedisCacheUtil.java
+		
+cnweb
+	RedisCacheUtil.java
+		1.使用两种方式注入属性值：@Value + el表达式，@Autowired。
+		2.使用了一个单例类对象，但单例模式可以改进。
+		3.将jedis的api转换成项目需要的api接口。
+
+oc的redis
+	redis操作类：OCRedisUtil
+		把对象存放在redis的时候，需要序列化，用了 ObjectInputStream/ObjectOutputStream 把对象转换成 ByteArrayInputStream/ByteArrayOutputStream
+
+	待审核工单放入redis队列，审核时从队列中取。队列是用list实现（一端进另一端出）。
+
+monitor的定时任务applicationContext-quartz.xml使用了分布式锁
+	用当前类名（字符串）作为锁。
+
+两种操作redis的方式
+	/**
+	实际一样，在applicationContext.xml中，RedisTemplate是封装了jedis，类似于jdbcTemplate封装了jdbc。
+	而RedisCacheUtil是自己封装了一个jedis，和spring用RedisTemplate封装jedis性质一样。
+	*/
+	1.使用jedis：sa的KftRedisCacheUtil.java、cnweb的RedisCacheUtil.java。
+		把redis当成key-value型的数据库使用，按key获取、删除、修改。
+		
+		使用jedis：
+				Jedis：用于直接操作redis，有set()、get()、del()等方法。
+				JedisPool：用于生成Jedis。
+				JedisPoolConfig：用于控制JedisPool如何生成Jedis。
+		
+		实际使用目的：
+					
+					
+			
+	2.使用Spring的RedisTemplate：RedisQueue.java，审核审批的队列。
+		使用了redis的queue数据结构，估计是封装了redis的普通key-value操作，封装成queue的形式对外提供接口。
+		
+		使用RedisTemplate:
+			使用jedis，配置文件只用配ip、port、pw，在java中设置JedisPoolConfig并发起连接，
+			使用RedisTemplate，在配置文件中配JedisPoolConfig、JedisConnectionFactory、RedisTemplate这些bean。java中直接使用
+			RedisTemplate的api各种花式操作redis。
+										
+
+redis涉及的文件
+	自定义
+		xxxmapper.xml
+			配置<cache>标签（用type属性指定实现了org.apache.ibatis.cache.Cache的类），或者<select>等标签的缓存属性。
+		applicationContext.xml	
+			-- 配置jedis，redisTemplate
+			需要配置redisTemplate，及其使用的connection-factory。在cn项目中，connection-factory使用的是JedisConnectionFactory。
+		com.gep.core.cache.RedisCache.java（GEP）
+			实现shiro的Cache接口。
+			封装了redisTemplate（而redisTemplate是封装了jedis）。
+		com.gep.core.feature.cache.redis.RedisCache.java（GEP）
+			很简单的封装了jedis。没有使用jedis连接池（jedisPool），也没有使用redisTemplate，而是直接用Jedis的构造器创建Jedis，然后操作jedis。
+		RedisCacheUtil（cnmodel）
+			封装了jedis。使用了JedisPool。
+			
+		com.gep.core.cache.MybatisRedisCache.java
+			实现了mybatis的Cache。
+			
+		com.gep.core.util.RedisUtils.java
+			封装了redisTemplate。
+			
+		com.gep.core.cache.JedisPoolHolder.java	
+			用来获取spring中配置的redisTemplate Bean。
+			RedisCache中使用getter/setter或者构造器传入。
+			RedisQueue.java中使用@Autowired获得redisTemplate。
+		
+		com.sa.util.RedisQueue.java
+			其它地方使用redisTemplate:
+				redisTemplate.execute(new RedisCallBack<>(){
+						public Object doInRedis(RedisConnection connection) throws DataAccessException {
+							...
+						}
+					}
+				);
+			而在RedisQueue中，用opsForList()、opsForValue()先获取一种数据结构，再调用这个数据结构的api进行操作。
+			
+			两种用法的目的和区别：
+				1.不知道是哪个db，只知道key或者key和value
+					需要在整个redis中查找，要用RedisConnection的hGet()、hSet()、hDel()、hLen()、hKeys()、hVals()。
+					
+					例：com.gep.core.cache.RedisCache。
+				2.知道是哪个db，
+					1.jedisPool中配置了db，只要使用jedisPool获取pool再获取Jedis，就是这个db。
+					2.使用RedisConnection的select()选择指定的db。
+					例：com.cn.common.util.RedisCacheUtil。
+				
+				3.不管是哪个db，需要使用队列
+						
+		SpringUtils implements ApplicationContextAware
+	自带
+		RedisTemplate
+		RedisCallback
+		RedisConnection
+		
+redis api
+	redisTemplate展示了3种api操作
+		1.redisTemplate.opsForValue() 、redisTemplate.opsForList() 获取某种数据结构，然后对该结构进行操作。
+		2.redisTemplate.execute()，使用key-value进行增删改查。
+		3.redisTemplate.execute()，使用key-hashMap进行增删改查。
+	RedisConnection的api，一种是不使用hash的，即方法名不是h开头的。另一种是使用hash的，方法名以h开头，并且参数带有一个hash的key（被称为field）。
+	hGet()：Redis HGET命令用于获取与字段中存储的键哈希相关联的值.
+	
+搜索“RedisUtils.”
+	sc
+		在自动撤销工单时，把appid放入redis，当成一把锁使用。
+			
+	ss
+		修改角色权限后，要手动清除redis缓存（Object obj = RedisUtils.removeObject(SysConstants.MENU_REDIS_KEY)）。
+		
+搜索“RedisQueue”
+	cnweb的applicationContext.xml配了一个spring mvc拦截器，
+	
+SSUtils.java的getMaxSARoles(String[] roleCodes)使用了redis
+	把一个对象（List<String>）作为value进行redis存取。实际是被用流转换成byte[]后进行存取。
+		public static byte[] serialize(Object object) {
+			ObjectOutputStream oos = null;
+			ByteArrayOutputStream baos = null;
+			try {
+				baos = new ByteArrayOutputStream();
+				oos = new ObjectOutputStream(baos);
+				oos.writeObject(object);
+				byte[] bytes = baos.toByteArray();
+				return bytes;
+			} catch (Exception e) {
+				throw new CacheException(e);
+			}
+		}
+	
+数据类型（有哪些操作）
+	/** redis总体是键值对结构，这些数据类型指的是"key"对应的“value”的数据类型。无论那种数据类型存储的时候都有一个key。
+	**/
+	区别，应用场景
+	5种
+	!!!!!!! 存对象的话需要用 ObjectInputStream/ObjectOutputStream 序列化/反序列化（参考上面“oc系统的OCRedisUtil.java文件”）。
+		字符串
+			其它类型实际是字符串类型的嵌套（因为字符串的value可以是任何类型所以能嵌套）。即value是list、hash、set、sortedSet。
+			但是那4种的元素只能是字符串类型，所以没法再嵌套了。
+		列表
+			双端链表(list)。适合对两端的操作，操作中间数据时效率低。
+		散列
+			适合基于值的操作，不适合顺序操作。
+		集合
+			是hashSet。
+		有序集合
+			存储的是一对数据：分数&数据。
+			分数可以重复，数据不能重复。
+			
+持久化（数据保存到硬盘）
+	/** 如何持久化？什么时候需要？业务上如何设置持久化方案？
+		每个方案的优缺点。
+	**/
+	快照
+		保存某一时刻的所有数据。
+	aof（append only files）
+		保存所有写操作。写操作是不断累积的，如果运行时间很长，写操作会非常多，导致aof文件非常大。
+	
+事务
+			
+使用redis实现分布式并发锁
+	使用的是redisson提供的分布式锁。
+	redisson提供了一系列具有分布式特性的常用工具类。包括：
+		分布式对象
+			通用对象桶（Object Bucket）
+			二进制流（Binary Stream）
+			地理空间对象桶（Geospatial Bucket）
+			 BitSet
+			原子整长形（AtomicLong）
+			原子双精度浮点数（AtomicDouble）
+			话题（订阅分发）
+			布隆过滤器（Bloom Filter）
+			基数估计算法（HyperLogLog）
+		分布式集合
+			映射（Map）
+			多值映射（Multimap）
+			集（Set）
+			有序集（SortedSet）
+			计分排序集（ScoredSortedSet）
+			字典排序集（LexSortedSet）
+			列表（List）
+			列队（Queue）
+			双端队列（Deque）
+			阻塞队列（Blocking Queue）
+			有界阻塞列队（Bounded Blocking Queue）
+			 阻塞双端列队（Blocking Deque）
+			阻塞公平列队（Blocking Fair Queue）
+			延迟列队（Delayed Queue）
+			 优先队列（Priority Queue）
+			优先双端队列（Priority Deque）
+		分布式锁
+			可重入锁（Reentrant Lock）
+			公平锁（Fair Lock）
+			联锁（MultiLock）
+			红锁（RedLock）
+			读写锁（ReadWriteLock）
+			信号量（Semaphore）
+			可过期性信号量（PermitExpirableSemaphore）
+			闭锁（CountDownLatch）
+		分布式服务
+			分布式远程服务（Remote Service）
+			分布式实时对象（Live Object）服务
+			分布式执行服务（Executor Service）
+			分布式调度任务服务（Scheduler Service）
+			分布式映射归纳服务（MapReduce）
+
+	1.项目applicationContext.xml配置文件注入连接池：
+	<!-- 基于redis的分布式并发锁 -->
+		<bean id="redisDisLockPool" class="com.gep.core.lock.RedisDisLockPool">
+			<property name="host" value="${redis.host}" />
+			<property name="port" value="${redis.port}" />
+			<property name="password" value="${redis.password}" />
+			<property name="dataBase" value="${redis.database}" />
+			<property name="timeout" value="${redis.timeout}" />
+			<property name="maxTotal" value="${redis.pool.maxTotal}" />
+			<property name="idelTimeout" value="${redis.pool.maxIdle}" />
+		</bean>
+	2.注入连接池对象：
+	@Resource
+	private RedisDisLockPool redisDisLockPool;
+	
+	3.业务代码使用：
+	RedisDisLock lock = null;
+	try {
+		// 获取锁对象，key为锁定的字符串
+		lock = redisDisLockPool.getLock(key);
+		 
+		// 进行锁定，
+		// waitTime锁定时间（单位：s/秒，默认10s）；
+		// leaseTime锁超时时间（单位：s/秒，默认60s），超时后会自动释放锁
+		lock.lock(waitTime,leaseTime);
+	 
+		// TODO:业务代码
+	 
+	} finally {
+		// 释放锁
+		if (!InputChecker.isEmpty(lock) && lock.isLocked()) {
+			lock.unlock();
+		}
+	}
+	
+
+
+
+				

@@ -1,0 +1,119 @@
+
+
+多线程
+	zookeeper的ClientCnxn.java，多处用到synchronized。
+
+	cnweb的com.sl.commons.concurrent下面有自己二次封装的几个类，但是没有找到哪儿使用。
+	
+	搜concurrent，得到的结果都是java.util.concurrent.ExecutorService
+	使用场景
+		下载合同模板
+			ExecutorService executorService = Executors.newSingleThreadExecutor();   // 创建执行器服务
+			DownLoadPdf download = new DownLoadPdf();  // 是一个Callable异步服务，在其call()方法中，用URLConnection下载pdf
+			download.setUrlAndFile(new URL(url), f);
+			File downloadFIle = executorService.submit(download).get(); // 不存在执行下载
+
+	
+	@async/@EnableAsync
+		-- 这种异步并没有取到返回值，没法判断异步结果。
+		使用场景
+			异步发送邮件。mailService.sendAsync()。
+			sa提交工单时调用。lnAppRuleCheck()。
+			快付通校验。kftSuccess()/kftFailed()
+			修改工单状态并放入redis。updateStatusAsync()。
+		使用的是spring自带的线程池，实现类是threadPoolTaskExecutor.java，在application.xml中用<task>标签进行进一步配置：
+			配置一个线程池：
+				<task:executor id="threadPoolTaskExecutor" pool-size="10-100" queue-capacity="10" keep-alive="5" rejection-policy="CALLER_RUNS"/>
+			指定@async使用的线程池：
+				<!-- 指定一个缺省的executor给@Async使用 -->
+				<task:annotation-driven executor="threadPoolTaskExecutor" />
+			
+			
+	Map<String,String> cMap = new ConcurrentHashMap<>();
+	
+	List<String> list = new ArrayList<>();
+	List<String> sList = Collections.synchronizedList(list);
+	
+	两种用法
+	1.SimpleDateFormat不同于String，是可变引用。如果共享会有线程安全问题。重写initialValue()给所有线程一个同类型的初始值，
+	后面每个线程用get()获取属于自己的实例。也可以用set修改为适合自己的实例（如：threadLocal.set(new SimpleDateFormat("yyyy-MM"))）
+	ThreadLocal<SimpleDateFormat> threadLocal = new ThreadLocal() {  
+		        protected synchronized Object initialValue() {  
+		            return new SimpleDateFormat("yyyy-MM-dd");  
+		        }  
+		    };
+	2.不用重写initialValue()，直接用set()、get()使用。
+	// 从这个例子也能看出线程的边界。应该是每一次url请求是一个线程（发起请求的最开始设置CurrentUser，后面的步骤可以get取用）。
+	public class CurrentUser {
+		private static final Logger log = Logger.getLogger(CurrentUser.class);
+		private static final ThreadLocal<UserInfoPOJO> local = new ThreadLocal<UserInfoPOJO>();
+
+		public static UserInfoPOJO currentUser() {
+			UserInfoPOJO user = local.get();
+			return user;
+		}
+
+		public static void putUser(UserInfoPOJO user) {
+			local.set(user);
+		}
+		public static void removeUser() {
+			if (local.get() != null) {
+				local.set(null);
+			}
+		}
+	}
+			
+			
+并发
+	从简单到复杂
+		final
+			不可变就没有线程安全问题。
+		volatile
+			对于volatile变量，修改后能马上回写内存（而不是仅保存在缓存），每一次读取也是读内存而不是缓存，从而保证可见性。
+			也能阻止代码重排序带来的执行顺序混乱。
+		atomic原子操作的类
+			
+		concurrent包下面的数据结构
+			concurrentHashMap
+			Hashtable
+		ThreadLocal
+		整个方法synchronized
+		代码块synchronized
+		细粒度的lock
+			lock和代码块synchronized在控制粒度方面是一样精确的，区别在于：
+			可中断锁！！！
+				synchronized获取锁的线程，不会响应中断信号。lock能响应中断信号，在响应的同时释放锁。
+			超时获取
+				tryLock()，会立即（或者在指定的时间内）返回boolean。
+			多个锁时，lock能做到任意交叉获取、释放。
+			多个condition
+多线程
+	@async
+	执行器（Executor/Executors）
+		Executor（接口）
+			只有一个 void execute(Runnable command) 接口方法。
+		Executors（类）
+			有一堆返回不同ThreadPool（返回值都是实现了ExecutorService接口的类，ExecutorService接口继承了Executor接口）的静态方法。
+			有几个将Runnable转换成Callable的方法。
+		execute() 与 submit() 的区别。
+	线程池（ExecutorService、threadpool）
+		ExecutorService（接口）
+		
+		线程池一般是全局的，不会是某个类的某个方法单独new一个线程池。
+		// !!!!!!!!!!!!
+		超能项目使用的，是在application.xml中配置一个spring自带的线程池，实现类是threadPoolTaskExecutor.java。也可以用
+		自己实现的线程池util类。
+		-- 比如cnweb_sa_service的WechatUserUtils。
+		
+	thread
+	runnable
+	callable
+	future
+	futrueTask
+	
+	
+		
+			
+
+
+

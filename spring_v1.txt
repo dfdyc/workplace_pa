@@ -1,0 +1,285 @@
+
+	配置class=org.springframework.beans.factory.config.PropertyPlaceholderConfigurer的bean加载properties文件，
+	然后用${}通过key获取value。
+	
+	在任意位置获取HttpServletRequest
+		HttpServletRequest hreq=((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		ApplicationContext ctx = ContextLoader.getCurrentWebApplicationContext();
+		/*  老版可以实现applicationcontextaware接口，spring会自动注入applicationcontext属性值。
+		ContextLoader是spring用来加载.xml配置文件的工具类（通过web.xml中的ContextLoaderListener加载），所以用它的api可以获取
+		加载后的所有信息，包括ApplicationContext  */
+
+配置文件
+	cnweb_sa
+		加载spring配置文件
+			web.xml	
+				1.通过全局变量contextConfigLocation。
+				2.通过DispatcherServlet的init-param。
+		spring-mvc.xml
+			1.context:component-scan：需要扫描的目录。使用注解的类，需要在这些目录下，否则注解不会起作用。
+			2.mvc:interceptors：拦截器。0
+				基本形式
+				特殊情况
+					1.一个interceptor配多个mvc:mapping。
+					2.通过property标签注入属性。
+						注入集合属性。
+			3.类型自动转换
+				mappingJsonHttpMessageConverter
+					作用：ajax的dataType设置为json，服务器端返回一个对象，spring会使用类型转换器把这个对象自动转换成json，js端接收到的就是json而不是string。
+					如果没有这个转换，就只能是java将对象转换成json，以string形式传给js，js再parse成json。
+			
+		applicationContext.xml
+			用配置文件放参数
+				spring配置文件中参数可以放在.properties文件中，用“propertyConfigurer”配置，然后用 “${}” 读参数。
+			数据源配置
+				
+应用上下文（ApplicationContext）
+	如何获取？
+		1.从xml文件手动创建：ApplicationContext ac = new FileSystemXmlApplicationContext(xmlPath);
+		2.通过Spring的工具类WebApplicationContextUtils 获取
+	有啥用？
+		能手动从Spring获取所需要的bean。
+	哪几种？
+		4种。spring实战第四版p44。
+		AnnotationConfigApplicationContext	从一个或多个基于java的配置类中加载上下文定义，适用于java注解的方式。
+		ClassPathXmlApplicationContext	从类路径下的一个或多个xml配置文件中加载上下文定义，适用于xml配置的方式。
+		FileSystemXmlApplicationContext	从文件系统下的一个或多个xml配置文件中加载上下文定义，也就是说系统盘符中加载xml配置文件。
+		AnnotationConfigWebApplicationContext	专门为web应用准备的，适用于注解方式。
+		XmlWebApplicationContext	从web应用下的一个或多个xml配置文件加载上下文定义，适用于xml配置方式。
+				
+依赖注入
+	3种注入方式：1.自动装配。2.用java显式装配。3.用xml显式装配。
+
+	ServiceImpl中需要注入xxxMapper.java属性，可以用@Autowired注入，xxxMapper.java的实现类是xxxMapper.xml，虽然没有@Component进行配置，但是
+	还是能被@Autowired自动探测到。
+	
+	自动检测
+		扫描规则。
+	
+	自动装配
+		byName，byType，byConstructor。
+		primary。
+		@Qualifier。
+	
+	动态装配
+		2种方式
+		1.${}从属性文件读入
+			1.基于javaConfig的注解配置中，可以用@PropertySource(value = { "file:c:/application.properties" })引入配置文件，然后用把key当做变量使用。
+			2.在spring的xml配置文件中，用PropertyPlaceholderConfigurer引入配置文件，在xml或者java的注解（如@Value）中可以用${key}引用值。
+		2.#{}，spring EL表达式
+
+
+各种注解
+	@Value("${redis.port}")
+		用类似el表达式的方式从配置文件中读取数据，配置文件是applicationContext.xml中使用PropertyPlaceholderConfigurer引入的那些配置文件。
+	@Async
+		需要配合xml的<task:executor>使用。
+		带有这个注解的方法会被异步调用。
+	@RequestMapping
+		可用于类、方法。
+	@ResponseBody/@RequestBody
+	表单提交不需要@RequestBody。如果提交的是json字符串，contentType:"application/json"，需要@RequestBody把json字符串映射成参数名-参数值。 
+	如果ajax的contentType是“application/x-www-form-urlencoded"，不需要用@RequestBody，会自动把请求参数封装到对象对应的同名属性；		如果ajax的contentType是“application/json"，需要用@RequestBody。此时request.getParameter("")获取不到参数，只能用流的形式获取一个json形式的字符串。
+	返回值是一个对象，dataType: "json"，需要用@ResponseBody，把对象转换成json字符串。
+	
+	@RequestParam
+		对于enctype="application/x-www-form-urlencoded"提交：
+			对于同名参数，不需要这个注解。
+			不同名参数，要用这个。
+		对于enctype="multipart/form-data"提交：
+			无论参数是否同名都要用这个注解
+	@PathVariable
+		用于restful风格的url。
+	
+	@resource/@autowired(@Qualifier)/@inject
+	@Resource的作用相当于@Autowired，只不过@Autowired按byType自动注入，而@Resource默认按 byName自动注入罢了。
+	@Resource有两个属性是比较重要的，分别是name和type，Spring将@Resource注解的name属性解析为bean的名字，而type属性则解析为bean的类型。
+	所以如果使用name属性，则使用byName的自动注入策略，而使用type属性时则使用byType自动注入策略。如果既不指定name也不指定type属性，
+	这时将通过反射机制使用byName自动注入策略。
+　　@Resource装配顺序
+　　1. 如果同时指定了name和type，则从Spring上下文中找到唯一匹配的bean进行装配，找不到则抛出异常
+　　2. 如果指定了name，则从上下文中查找名称（id）匹配的bean进行装配，找不到则抛出异常
+　　3. 如果指定了type，则从上下文中找到类型匹配的唯一bean进行装配，找不到或者找到多个，都会抛出异常
+　　4. 如果既没有指定name，又没有指定type，则自动按照byName方式进行装配；如果没有匹配，则回退为一个原始类型进行匹配，如果匹配则自动装配；
+	
+	异常处理
+		@ExceptionHandler
+			能处理同一个controller中被@RequestMapping注解的方法抛出的异常。
+		@ControllerAdvice
+			用于一个类，处理所有controller中被@RequestMapping注解的方法抛出的异常。
+			
+aop
+	1.配置声明式事务，使用了aop配置。
+	2.配置了3个切面：
+		1）校验url权限。
+			PermissionAdvice
+				
+		2）校验提交的表单参数。
+		3）表单提交加token，防止重复提交。
+	
+	配置方式，用的应该是老式，没有在配置的时候指明切入时机，而是通过实现MethodBeforeAdvice等接口，耦合性过度。
+	
+	
+	PermissionAdvice
+	ValidateAdvice
+	SubmitTokenAdvice
+	
+	aop应该不能像filter、spring mvc拦截器那样改变拦截对象的流程。
+	
+	获取参数
+		可以用RequestContextHolder获取request再从中获取参数。
+		旧的实现方式，切面的方法会传入Method、Object[]作为参数。
+		新的实现方式
+			可以用argNames传入指定名字的参数。
+			可以用around切面，ProceedingJoinPoint的api（如proceedingJoinPoint.getArgs()）获取参数等信息。
+			对于任何类型切面，只需要把JoinPoint jp声明为方法的第一个参数，就能用其api获取所有信息。
+			官方解释
+				Access to the current JoinPoint
+				Any advice method may declare as its first parameter, a parameter of type org.aspectj.lang.JoinPoint 
+				(please note that around advice is required to declare a first parameter of type ProceedingJoinPoint, which is a subclass of JoinPoint. 
+				The JoinPoint interface provides a number of useful methods such as getArgs() (returns the method arguments), getThis() 
+				(returns the proxy object), getTarget() (returns the target object), getSignature() (returns a description of the method that is being advised) 
+				and toString() (prints a useful description of the method being advised). Please do consult the javadocs for full details.
+		
+		after-returning可以获取返回值
+			@Aspect
+			public class AfterReturningExample {
+
+				@AfterReturning(
+					pointcut="com.xyz.myapp.SystemArchitecture.dataAccessOperation()",
+					returning="retVal")
+				public void doAccessCheck(Object retVal) {
+					// ...
+				}
+
+			}
+		after-throwing可以获取抛出的异常
+			@Aspect
+			public class AfterThrowingExample {
+
+				@AfterThrowing(
+					pointcut="com.xyz.myapp.SystemArchitecture.dataAccessOperation()",
+					throwing="ex")
+				public void doRecoveryActions(DataAccessException ex) {
+					// ...
+				}
+
+			}
+				
+	
+	切面
+	通知
+	切入点
+	切入时机
+	
+	
+		
+		
+事务管理
+	属性
+		传播规则（事务的边界）
+		隔离级别
+		只读
+		超时
+		回滚规则
+
+	声明式
+	
+	编码式
+
+
+mvc
+	类型自动转换
+		mappingJsonHttpMessageConverter
+	view添加前后缀
+		viewResolver
+	不走DispatcherServlet的资源（静态资源）
+		mvc:resources
+
+
+定时器
+
+
+	
+	
+拦截器
+	spring-mvc.xml中有拦截器。
+	
+	用法：
+		继承HandlerInterceptorAdapter。
+		重写preHandle (HttpServletRequest request, HttpServletResponse response, Object handle) 
+			postHandle (HttpServletRequest request, HttpServletResponse response, Object handle, ModelAndView modelAndView) 
+			afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handle, Exception ex)
+	
+	拦截后，可以使用response.sendRedirect()跳到其它controller。
+	同一个方法配多个拦截器时，链式调用顺序：对于postHandle：先声明的Interceptor 的postHandle 方法反而会后执行。
+	可以用response.getWriter().append("abc")修改返回的内容。
+	
+messageConverters
+	controller接收/返回（分别对应AbstractHttpMessageConverter的readInternal、writeInternal）某些类型时，默认的转换可能会出错，需要显式指定一个类型转换器。
+	超能指定了两个：
+		com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter：支持json和对象的转换。
+			如果返回的是一个对象，@ResponseBody会自动用这个转换器转换成json字符串。
+			如果接收的是一个json字符串，@RequestBody会自动用这个转换器转换成对象。
+		org.springframework.http.converter.StringHttpMessageConverter：支持返回string。
+	自定义的话，需要继承适配器AbstractHttpMessageConverter<Object>。
+	
+简化配置文件
+	PropertyPlaceholderConfigurer
+		引入.properties配置文件，然后在spring配置文件中可以用${}引用（注解中也可以用${}引用，如@Value）。
+		
+视图解析器
+	InternalResourceViewResolver
+	
+	返回string时，如何区分返回的是jsp视图还是string字符串？
+		如果有@ResponseBody，就不会按视图解析，
+		否则，会根据InternalResourceViewResolver将String解析成jsp视图。
+		
+spring MVC controller处理返回值
+	1.返回ModelAndView，其构造器参数是jsp路径。通过addObject()添加需要传递的参数，例：
+		return new ModelAndView("loan/lnapp/list", "params", gxtParams())
+			.addObject("applymen", sj).addObject("productSeriesNames", sj2)
+			.addObject("statusType", sj3);
+	2.没有@ResponseBody，返回String。
+		此时返回的string会被当做jsp路径进行解析。如果配有InternalResourceViewResolver会自动添加前后缀。
+	3.有@ResponseBody，返回任意类型。
+		会用messageConverters解析返回的类型。
+		如果没有messageConverters会返回什么？？？字符串？？？
+		
+		
+线程池
+
+定时器
+
+邮件
+	
+==================== 官方文档
+6 The IoC Container
+	6.1 Introduction to the spring IoC container and beans
+	6.2 Container overview
+	6.3 Bean overview
+		Naming beans
+		Aliasing a bean outside the bean defination
+		Instantiating beans
+	6.4 Dependencies
+		Dependency Injection
+			Constructor-based dependency injection
+		Setter-based dependency injection
+		Dependency resolution process
+		Examples of dependency injection
+		Dependencies and configuration in detail
+
+
+
+
+
+
+
+
+
+		
+		
+		
+		
+		
+		

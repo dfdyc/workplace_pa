@@ -1,0 +1,119 @@
+
+查看安装的类库及其版本号：pip list 
+
+命名规范
+	module_name, package_name, ClassName, method_name, ExceptionName, function_name, GLOBAL_VAR_NAME, instance_var_name, 
+	function_parameter_name, local_var_name. 
+
+文件整体架构
+	文件整体是一个class。
+	文件不是一个class，由多个函数组成。要有__main__函数作为执行当前文件时的触发函数，不要零散的把代码写在函数外面。
+	
+python功能规划
+	整理一份api
+	file
+		覆盖写文件
+		追加内容
+		替换指定的内容
+		递归复制文件夹，清空其中的文件。
+		创建java web最小工程
+	system
+		打开文件夹
+		执行exe
+		
+	network
+		登陆
+		发送http
+		发送tcp/ip
+		爬虫
+	svn
+		提取提交记录
+	dev
+		redis
+		oracle
+
+
+查看第三方模块api
+	help()，看输出。
+
+库
+	os
+	
+	urllib
+	
+	解析html
+		pyquery
+		beautifulsoup
+
+source
+	parse.py
+		for x in self
+			self代表当前实例，任何有iter()的对象都是iterable，都能被for in
+		_, _, hostinfo = netloc.rpartition('@')   -- ?
+
+		
+
+数据类型
+	str
+	
+	list
+		insert()
+		append()
+		pop()
+		pop(i)
+	
+	dict
+		循环
+			for k, v in dict.items():
+				pass
+		
+			
+
+查看api
+	help
+	dir
+	
+	pypi上有主页链接，查看官方文档
+	代码中用dir输出
+	
+	
+===================
+svn
+	os.popen()，能执行cmd命令，
+	svn命令行客户端，查看修改的文件
+
+python操作redis
+	https://pypi.python.org/pypi/redis
+	pip install redis
+	import redis即可
+	
+读写文件
+	fileinput包
+	
+爬虫
+	chrome，f12抓包，redirect时之前网页的数据会清除，network选项下面，preserve log选项勾上就不会清除了。
+	
+	https://buyertrade.taobao.com/trade/itemlist/list_bought_items.htm?spm=a1z09.2.1997525045.2.1f30a53fTAU0Sw
+	
+技巧
+	for in 循环list的时候，可以删除当前循环的元素然后继续循环。
+	例：
+		l = ['a','b','c','d','e','f']
+		print('l:',l)
+		for e in l:
+			if e == 'c':
+				l.remove(e)
+			pass
+		print('l:',l)
+		
+	python没有函数重载，因为函数参数本身可以多种变换实现类似重载的作用。
+	
+	class的构造函数可以调用其它非构造函数。
+	
+
+python操作oracle
+	pip install cx_Oracle
+	
+
+
+

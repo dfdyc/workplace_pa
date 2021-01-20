@@ -1,0 +1,32 @@
+
+f2可以进入bios。f12可以快捷设置这一次从哪儿启动。
+一般用f12，用f2的话还要改回去，因为装系统过程中本身就要重启。
+
+迅雷
+搜狗
+winrar
+chrome
+暴风影音
+qq
+qq音乐
+丁丁
+微信
+adobe
+foxmail
+
+开发环境
+	java
+	maven
+	eclipse
+	python
+	mysql	???
+	虚拟机
+	git客户端
+	tor
+	lantern
+	goagent
+
+
+
+
+

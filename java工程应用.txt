@@ -1,0 +1,286 @@
+
+
+/******   最小化工程   ******/	
+新建工程dwp4
+	新建dynamic web project，在第二步source folders for build path删除src（后面再统一添加），项目右键，config to maven project。
+	项目右键，resource，设置utf8编码。
+	磁盘上，src下面创建main/java, main/resources, test/java, test/resources文件夹，webContent下面也创建对应文件夹存放js和jsp。
+	// 麻烦的做法：项目右键build path，source选项卡，删除src，add folder添加新创建的文件夹test/resources、test/java、main/resource、main/java。点edit，一路next配置。
+	// 简单的就是下面这样直接复制别的.classpath的内容
+	把其它项目的.classpath里面kind="src"的4个复制过来。
+	.project文件删除js相关内容。
+	pom添加依赖：
+		spring
+		jstl
+	生成/配置web.xml：项目右键--java ee tools--generate deployment descriptor stub。  //也可以在新建工程的时候生成
+	配置spring
+		applicationContext.xml
+	spring-mvc要配：<context:component-scan use-default-filters="true" base-package="com.activemq"/>，否则spring mvc识别不了controller。不能只在applicationContext.xml里面配。
+	complie看是否能成功。
+	引入jquery
+		在<head>后，其它js之前引入jquery，注意js的路径在tomcat和jetty下面不一样。
+	window--show view--other，搜problems，可以看所有红叉报错。
+	
+/************ version 2.0   ************/
+新建工程drl-v1
+	新建dynamic web project，在第二步source folders for build path删除src，下一步选择生成xml文件。项目右键，config to maven project。
+	项目右键，properties--resource，设置utf8编码。
+	磁盘上，src下面创建main/java, main/resources, test/java, test/resources文件夹，webContent下面也创建对应文件夹存放js和jsp。
+	默认是project的名字：项目右键，properties--web project settings，设置web项目的context root。
+	// 不要这样，需要edit太麻烦，直接复制.classpath就行：项目右键build path，source选项卡，删除src，
+	// add folder添加新创建的文件夹test/resources、test/java、main/resource、main/java。点edit，一路next配置。
+	把其它项目的.classpath里面kind="src"的4个复制过来。
+	.project文件删除js相关内容。
+	pom添加依赖：
+		spring
+		jstl
+	// 生成&配置web.xml：项目右键--java ee tools--generate deployment descriptor stub。  // 已经在在新建工程的时候生成
+	配置
+		applicationContext.xml
+		spring-mvc.xml
+		web.xml
+	complie看是否能成功。
+	引入jquery
+		在<head>后，其它js之前引入jquery，注意js的路径在tomcat和jetty下面不一样。
+	window--show view--other，搜problems，可以看所有红叉报错。
+	配置jrebel。help--jrebel--configuration--projects，drl-v1打勾
+	
+/*************************/
+
+String projectPath = LnAppServiceImpl.class.getResource("/").getPath();
+-- URL url = class.getResource("/");
+
+获取当前类的绝对路径：this.getClass().getResource("/").getPath()
+
+判断某个对象除了某几个属性其它属性必须为空
+	用反射。
+	for (Field f : lnAppSub.getClass().getDeclaredFields()) {
+		f.setAccessible(true);
+		if (f.get(lnAppSub) != null && !notNullFieldSet.contains(f.getName())) { 
+			validateResult.setMsg(getMessage(ERROR_PARAMETER_FIELD_FORMAT, LNAPPSUBS));
+			break;
+		}
+	}
+
+gep：ActionAdvice.java
+			@ControllerAdvice
+					http://jinnianshilongnian.iteye.com/blog/1866350
+					即把@ControllerAdvice注解内部使用@ExceptionHandler、@InitBinder、@ModelAttribute注解的方法应用到所有的
+					@RequestMapping注解的方法。
+			@ExceptionHandler，@ResponseStatus
+
+
+如何防表单重复提交？
+
+上传图片
+	cnweb
+		attachupload.jsp
+			<form action="./loan/lnapp_10/upload2.gxtweb" id="uploadForm" method="post" enctype="multipart/form-data">  
+			</form>
+			$('#uploadForm').ajaxSubmit(function(result){
+				if(result.attachType == 'OK'){
+					alert('上传文件成功');
+					addImage(result);
+				}else if(result.attachType == 'commited'){
+					alert('合同已经审核,不能上传文件');
+				}else{
+					alert('上传文件失败');
+				}
+			});
+		LnAppController10.java
+			upload2()
+			uploadFile(request)
+			
+	只要有file，就用multipart/form-data，java里仍然能用String appId = request.getParameter("appId");获取普通input值。
+	把request强制转成MultipartHttpServletRequest就能用getFile(fileName)获取指定的那个file。
+
+展示/下载图片
+	返回的是图片的url，设置到<img>标签的属性中。
+	
+下载pdf
+	sa
+		lnAppServiceImpl，confirmTran()
+			pdf和图片一样，在oss上保存的是url
+			
+上传excel
+	form的enctype是multipart/form-data
+			<input type="file" name="file" id="file" />
+	// 用formData封装表单域。contentType是false。
+			var formData = new FormData($("#uploadForm")[0]);
+			contentType需要设置成false。
+			$.ajax({
+				type : "POST",
+				url : 'product/jjcodeGoods/importUpdateData',
+				data : formData,
+				contentType: false, 
+				async: false,  
+         		cache: false,
+         		processData: false,
+				error : function(request) {
+					JfchUi.warning({content : "连接超时，请稍后再试！"});
+				},
+				success : function(data) {
+					initPage(data);
+				}
+			});
+		
+下载excel
+	下载的是服务器上已经存在的文件，需要用流将文件读入然后用输出流写到前端。
+		TemplateAttachController.java
+		template_list.jsp
+		
+		服务器端
+			设置response
+				response.reset();
+				response.setCharacterEncoding("UTF-8");
+				response.setContentType("application/vnd.ms-excel");
+				response.addHeader("Content-Disposition",  "attachment;filename=" +URLEncoder.encode(prefix+"_template_"+index, "UTF-8")+".xls");
+				InputStream fis = new FileInputStream(realPath);
+				byte[] bytes = new byte[1024];
+				while(fis.read(bytes) != -1 ){
+				 response.getOutputStream().write(bytes);
+				}
+				response.getOutputStream().flush();
+				response.getOutputStream().close();
+		前端
+			第一种：前端是正常的submit form。
+			第二种：如果前端要用ajax，而ajax返回类型只有xml、text、json、html等类型, 没法处理返回的文件，所以要用js模拟一个表单提交，如下：
+				// aForm是页面普通form，用$('#aForm').serializeArray()提取aForm的数据，设置到动态生成的form中。
+				/**
+				 * ajax方式下载文件
+				 * formId是页面普通表单的id
+				 * @returns
+				 */
+				function ajaxDownload(formId, url){
+					var form = $("<form></form>")
+					form.css('display','none')
+					form.attr('action',url)
+					form.attr('method','post')
+					var input_html = "<input type='hidden' name='#1' value='#2' />";
+					var paramArray = $('#' + formId).serializeArray();
+					for (var i in paramArray) {
+						var input_html_val = input_html; 
+						input_html_val = input_html_val.replace('#1', paramArray[i].name)
+						input_html_val = input_html_val.replace('#2', paramArray[i].value)
+						form.append(input_html_val)
+					}
+					form.appendTo('body')
+					form.submit()
+				}
+			
+	下载的是poi生成的excel
+		
+
+	
+	
+防重复登录（和单点登录不是一个概念）
+	新项目：
+		wiki：http://192.168.200.212:8090/pages/viewpage.action?pageId=2917322
+		gep的SingleLoginAdvice。
+		UserUtils.singleSession(user.getLoginName(), ip);
+		
+		过程：
+			使用了一个afterReturning切面。登录后获取loginName和ip（从request中可以获取）。
+			使用了redis，保存了两个字符串：
+				1.key是“user_data:”+userId，value是一个json，包括shiro的session的id、ip。
+				2.key是“user_session:”+，value是“shiro_session:”+shiro的session的id。
+	
+	cnweb：
+		
+生成合同
+	sa
+		ContractController
+		
+解决jar冲突。
+	eclipse中，pom.xml文件除了常规的文本打开方式，还可以在下面那一排选择展示依赖，然后搜索冲突的jar，点remove删除。
+	
+maven多模块
+	maven的聚合和继承
+	
+分页
+	分页是一套东西，不仅有mybatis的插件，还有前端，还有java里面封装的page对象以及调用的方法。
+	gep
+		baseController
+			封装了page相关的方法
+		baseService
+
+	PaginationResultSetHandlerInterceptor
+
+	原框架hibernate分页
+		在超类controller（PageController）中，将分页参数封装成Page对象，放入ThreadLocal，在service的分页方法中，取出Page，使用
+		hibernate的setFirstResult()、setMaxResults()进行分页。
+		
+	原框架jdbc分页
+
+	
+
+main调试
+	public static void main(String[] arg){
+		System.out.println("test");
+		
+//		String xmlPath="classpath:applicationContext-*.xml";
+		String[] xmlPathArr = new String[]{"classpath:applicationContext.xml","classpath*:applicationContext-consumer.xml"};
+		ApplicationContext ctx=new ClassPathXmlApplicationContext(xmlPathArr); 
+		ContractTemplateService contractTemplateService2 = (ContractTemplateService) ctx.getBean("contractTemplateService2");
+		
+		
+		QZRequest request = new QZRequest();
+	    request.getHeader().setUuid(UUID.randomUUID().toString());
+	    List<Long> ids = Arrays.asList(new Long[]{11L,12L,14L,15L});
+	    request.getBody().getData().put(Constants.REQUEST_DATA_TEMPLATE_ID, ids);
+	    
+	    QZResult result = contractTemplateService2.selectTemplate(request);
+	    
+	    
+	    
+	    System.out.println(JSONObject.toJSONString(result));
+		
+	}
+
+	
+
+=================================
+permspace
+	http://jingyan.baidu.com/article/20b68a884d7f72796cec62e3.html
+
+	修改eclipse的Run Configurations
+
+	点击“Run”-"Run Configurations",在打开的窗口中点击“Arguments”选项卡。
+
+	在VM arguments中内容最下边输入：
+	-Xms256m -Xmx512m -XX:MaxNewSize=256m -XX:MaxPermSize=256m
+
+打包
+	MANIFEST.MF
+
+	新建java项目
+
+	引入jar包
+		1.项目右键-->Config，选择转换成maven项目，在pom中配置坐标。
+		2.build path添加本地jar。
+
+	打jar包步骤
+		项目右键-->export-->java-->JAR File，到最后选择MANIFEST.MF的步骤，选择使用自定义的MANIFEST.MF。
+				MANIFEST.MF格式
+					Manifest-Version: 1.0
+					Main-Class: core.ModifyUser
+					Class-Path: lib\poi-3.7.jar  lib\commons-lang3-3.1.jar	
+					
+					1.最后一行必须是空行。
+					2.key的冒号后、value的值之前必须有一个空格。
+					3.Class-Path是引用的依赖的jar的路径，路径可以是相对路径，即相对该jar目录位置的路径。
+
+读取配置文件
+	读取.properties
+		使用ResourceBundle
+
+	读取xml 
+
+
+	读取txt
+
+
+	读取excel
+
+
+

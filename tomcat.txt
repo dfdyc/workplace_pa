@@ -1,0 +1,19 @@
+
+
+centos6安装tomcat
+	tar -xzvf apache-tomcat-9.0.37.tar.gz
+	mv apache-tomcat-9.0.37 apache-tomcat-9
+	cd apache-tomcat-9/bin
+	chmod -R 777 startup.sh shutdown.sh catalina.sh
+	
+	tomcat运行命令：./startup.sh
+	tomcat停止命令：./shutdown.sh
+	tomcat调试命令：./catalina.sh run
+
+
+
+
+
+
+
+
